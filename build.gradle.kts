@@ -1,5 +1,5 @@
-import org.gradle.api.JavaVersion.VERSION_21
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+import org.gradle.api.JavaVersion.VERSION_23
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
@@ -19,7 +19,7 @@ buildscript {
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(23))
     }
 }
 
@@ -35,7 +35,7 @@ tasks {
     withType<KotlinJvmCompile>().configureEach {
         compilerOptions {
             allWarningsAsErrors = false
-            jvmTarget.set(JVM_21)
+            jvmTarget.set(JVM_23)
             freeCompilerArgs.add("-Xjvm-default=all")
         }
     }
@@ -45,8 +45,8 @@ tasks {
     }
 
     java {
-        sourceCompatibility = VERSION_21
-        targetCompatibility = VERSION_21
+        sourceCompatibility = VERSION_23
+        targetCompatibility = VERSION_23
     }
 }
 
@@ -63,4 +63,3 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.12.0")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.12.0")
 }
-
