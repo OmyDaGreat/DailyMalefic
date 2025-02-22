@@ -1,4 +1,4 @@
-package xyz.malefic.daily.formats
+package xyz.malefic.daily.format
 
 import org.http4k.core.Body
 import org.http4k.format.Jackson.auto

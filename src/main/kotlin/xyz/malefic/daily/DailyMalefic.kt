@@ -12,13 +12,13 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
-import xyz.malefic.daily.formats.Quote
-import xyz.malefic.daily.formats.quoteLens
+import xyz.malefic.daily.format.quoteLens
+import xyz.malefic.daily.storage.QuoteStorage
 
-var currentQuote = Quote("Unknown", "No quote available")
+fun createApp(storage: QuoteStorage): HttpHandler {
+    var currentQuote = storage.loadQuote()
 
-val app: HttpHandler =
-    routes(
+    return routes(
         "/ping" bind GET to {
             Response(OK).body("pong")
         },
@@ -28,9 +28,13 @@ val app: HttpHandler =
         "/quote" bind POST to { request ->
             val newQuote = quoteLens(request)
             currentQuote = newQuote
+            storage.saveQuote(newQuote)
             Response(OK).with(quoteLens of currentQuote)
         },
     )
+}
+
+val app: HttpHandler = createApp(QuoteStorage())
 
 fun main() {
     val printingApp: HttpHandler = PrintRequest().then(app)
