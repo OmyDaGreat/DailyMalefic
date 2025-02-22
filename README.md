@@ -1,0 +1,7 @@
+# DailyMalefic
+
+## Package
+```
+./gradlew distZip
+```
+
