@@ -22,12 +22,6 @@ val app: HttpHandler =
         "/ping" bind GET to {
             Response(OK).body("pong")
         },
-        "/formats/json/jackson" bind GET to {
-            Response(OK).with(quoteLens of Quote("Barry", "Hello there!"))
-        },
-        "/testing/kotest" bind GET to { request ->
-            Response(OK).body("Echo '${request.bodyString()}'")
-        },
         "/quote" bind GET to {
             Response(OK).with(quoteLens of currentQuote)
         },
