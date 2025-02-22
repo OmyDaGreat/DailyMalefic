@@ -41,7 +41,7 @@ val app: HttpHandler =
 fun main() {
     val printingApp: HttpHandler = PrintRequest().then(app)
 
-    val server = printingApp.asServer(Undertow(101)).start()
+    val server = printingApp.asServer(Undertow(7290)).start()
 
     println("Server started on " + server.port())
 }
