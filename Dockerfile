@@ -1,5 +1,5 @@
 ARG TARGETARCH
-FROM eclipse-temurin:24-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
