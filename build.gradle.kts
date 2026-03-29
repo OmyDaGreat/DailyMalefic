@@ -61,5 +61,5 @@ dependencies {
     testImplementation("org.http4k:http4k-testing-hamkrest")
     testImplementation("org.http4k:http4k-testing-kotest")
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.14.3")
 }
