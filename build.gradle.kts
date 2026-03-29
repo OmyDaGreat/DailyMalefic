@@ -1,4 +1,3 @@
-import org.gradle.api.JavaVersion.VERSION_23
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -21,6 +20,7 @@ kotlin {
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(23))
     }
+    jvmToolchain(8)
 }
 
 application {
@@ -45,8 +45,6 @@ tasks {
     }
 
     java {
-        sourceCompatibility = VERSION_23
-        targetCompatibility = VERSION_23
     }
 }
 
@@ -62,4 +60,5 @@ dependencies {
     testImplementation("org.http4k:http4k-testing-kotest")
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.3")
+    implementation(kotlin("stdlib-jdk8"))
 }
