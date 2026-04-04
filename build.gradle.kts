@@ -20,7 +20,7 @@ kotlin {
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(23))
     }
-    jvmToolchain(8)
+    jvmToolchain(23)
 }
 
 application {
