@@ -5,15 +5,14 @@ import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
 import org.http4k.core.Request
-import org.http4k.core.Response
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.with
 import org.http4k.kotest.shouldHaveStatus
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import xyz.malefic.daily.format.Quote
+import xyz.malefic.daily.format.quoteHistoryLens
 import xyz.malefic.daily.format.quoteLens
 import xyz.malefic.daily.storage.QuoteStorage
 import java.nio.file.Path
@@ -28,12 +27,21 @@ class DailyMaleficTest {
     @BeforeEach
     fun setup() {
         storage = QuoteStorage(tempDir.toString())
-        testApp = createApp(storage, true)
+        testApp = createApp(storage, test = true, apiKey = null)
     }
 
     @Test
     fun `Ping test`() {
-        assertEquals(Response(OK).body("pong"), testApp(Request(GET, "/ping")))
+        val response = testApp(Request(GET, "/ping"))
+        response shouldHaveStatus OK
+        response.bodyString() shouldBe "pong"
+    }
+
+    @Test
+    fun `Health check test`() {
+        val response = testApp(Request(GET, "/health"))
+        response shouldHaveStatus OK
+        response.bodyString() shouldBe "healthy"
     }
 
     @Test
@@ -60,7 +68,7 @@ class DailyMaleficTest {
 
         // Create new app instance (simulating restart)
         val newStorage = QuoteStorage(tempDir.toString())
-        val newApp = createApp(newStorage, true)
+        val newApp = createApp(newStorage, test = true, apiKey = null)
 
         // Get quote from new instance
         val getResponse = newApp(Request(GET, "/quote"))
@@ -77,5 +85,24 @@ class DailyMaleficTest {
         val quote = quoteLens(getResponse)
         quote.author shouldBe "Unknown"
         quote.text shouldBe "No quote available"
+    }
+
+    @Test
+    fun `Quote history tracks all saved quotes`() {
+        val quote1 = Quote("Author 1", "First quote")
+        val quote2 = Quote("Author 2", "Second quote")
+
+        testApp(Request(POST, "/quote").with(quoteLens of quote1))
+        testApp(Request(POST, "/quote").with(quoteLens of quote2))
+
+        val historyResponse = testApp(Request(GET, "/quote/history"))
+        historyResponse shouldHaveStatus OK
+
+        val history = quoteHistoryLens(historyResponse)
+        history.size shouldBe 3 // default + 2 new quotes
+        history[1].author shouldBe "Author 1"
+        history[1].text shouldBe "First quote"
+        history[2].author shouldBe "Author 2"
+        history[2].text shouldBe "Second quote"
     }
 }

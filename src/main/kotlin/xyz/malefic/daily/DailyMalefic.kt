@@ -18,14 +18,15 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
+import xyz.malefic.daily.format.quoteHistoryLens
 import xyz.malefic.daily.format.quoteLens
 import xyz.malefic.daily.storage.QuoteStorage
 
 fun createApp(
     storage: QuoteStorage,
     test: Boolean = false,
+    apiKey: String? = System.getenv("API_KEY"),
 ): HttpHandler {
-    var currentQuote = storage.loadQuote()
     val postOriginList = listOf("https://monophobia.malefic.xyz")
 
     val getRequestsCorsPolicy =
@@ -37,7 +38,7 @@ fun createApp(
 
     val postRequestsCorsPolicy =
         CorsPolicy(
-            headers = listOf("Content-Type"),
+            headers = listOf("Content-Type", "X-API-Key"),
             methods = listOf(POST),
             originPolicy =
                 OriginPolicy
@@ -50,24 +51,28 @@ fun createApp(
             "/ping" bind GET to {
                 Response(OK).body("pong")
             },
+            "/health" bind GET to {
+                Response(OK).body("healthy")
+            },
             "/quote" bind GET to {
-                Response(OK).with(quoteLens of currentQuote)
+                Response(OK).with(quoteLens of storage.loadQuote())
+            },
+            "/quote/history" bind GET to {
+                Response(OK).with(quoteHistoryLens of storage.loadHistory())
             },
         )
 
     val postRoutes =
         routes(
             "/quote" bind POST to { request ->
-                // Additional origin check for POST requests
-                val origin = request.header("Origin")
-
-                if (origin != null && postOriginList.contains(origin)) {
-                    val newQuote = quoteLens(request)
-                    currentQuote = newQuote
-                    storage.saveQuote(newQuote)
-                    Response(OK).with(quoteLens of currentQuote)
+                // API key authentication
+                val requestApiKey = request.header("X-API-Key")
+                if (apiKey != null && requestApiKey != apiKey) {
+                    Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
-                    Response(UNAUTHORIZED).body("Unauthorized origin for POST request")
+                    val newQuote = quoteLens(request)
+                    storage.saveQuote(newQuote)
+                    Response(OK).with(quoteLens of newQuote)
                 }
             },
         )
@@ -81,7 +86,7 @@ fun createApp(
     )
 }
 
-val app: HttpHandler = createApp(QuoteStorage())
+val app: HttpHandler by lazy { createApp(QuoteStorage()) }
 
 fun main() {
     val printingApp: HttpHandler = PrintRequest().then(app)

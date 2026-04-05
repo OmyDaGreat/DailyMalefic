@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "2.3.20"
+    alias(libs.plugins.kotlin.jvm)
     application
 }
 
@@ -49,16 +49,14 @@ tasks {
 }
 
 dependencies {
-    implementation(platform("org.http4k:http4k-bom:6.40.0.0"))
-    implementation("org.http4k:http4k-client-okhttp")
-    implementation("org.http4k:http4k-config")
-    implementation("org.http4k:http4k-core")
-    implementation("org.http4k:http4k-format-jackson")
-    implementation("org.http4k:http4k-server-undertow")
-    testImplementation("org.http4k:http4k-testing-approval")
-    testImplementation("org.http4k:http4k-testing-hamkrest")
-    testImplementation("org.http4k:http4k-testing-kotest")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.3")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.3")
-    implementation(kotlin("stdlib-jdk8"))
+    implementation(platform(libs.http4k.bom))
+    implementation(libs.bundles.http4k)
+    implementation(libs.jackson.datatype.jsr310)
+
+    testImplementation(libs.bundles.http4k.testing)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+
+    implementation(libs.kotlin.stdlib.jdk8)
 }

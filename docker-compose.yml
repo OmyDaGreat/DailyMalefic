@@ -5,6 +5,7 @@ services:
       - "7290:7290"
     environment:
       - JAVA_OPTS=-Xmx512m
+      - API_KEY=${API_KEY:-}
     volumes:
       - quote_data:/data
     healthcheck:

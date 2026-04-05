@@ -1,0 +1,41 @@
+[versions]
+kotlin = "2.3.20"
+http4k = "6.40.0.0"
+jackson = "2.19.0"
+junit = "6.0.3"
+
+[libraries]
+http4k-bom = { module = "org.http4k:http4k-bom", version.ref = "http4k" }
+http4k-client-okhttp = { module = "org.http4k:http4k-client-okhttp" }
+http4k-config = { module = "org.http4k:http4k-config" }
+http4k-core = { module = "org.http4k:http4k-core" }
+http4k-format-jackson = { module = "org.http4k:http4k-format-jackson" }
+http4k-server-undertow = { module = "org.http4k:http4k-server-undertow" }
+http4k-testing-approval = { module = "org.http4k:http4k-testing-approval" }
+http4k-testing-hamkrest = { module = "org.http4k:http4k-testing-hamkrest" }
+http4k-testing-kotest = { module = "org.http4k:http4k-testing-kotest" }
+
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+[bundles]
+http4k = [
+    "http4k-client-okhttp",
+    "http4k-config",
+    "http4k-core",
+    "http4k-format-jackson",
+    "http4k-server-undertow",
+]
+http4k-testing = [
+    "http4k-testing-approval",
+    "http4k-testing-hamkrest",
+    "http4k-testing-kotest",
+]
