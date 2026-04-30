@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.20"
-http4k = "6.42.0.0"
+http4k = "6.45.1.0"
 jackson = "2.21.2"
 junit = "6.0.3"
 
