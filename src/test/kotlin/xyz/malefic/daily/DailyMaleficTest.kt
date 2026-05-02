@@ -11,22 +11,22 @@ import org.http4k.kotest.shouldHaveStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import xyz.malefic.daily.format.Quote
-import xyz.malefic.daily.format.quoteHistoryLens
-import xyz.malefic.daily.format.quoteLens
-import xyz.malefic.daily.storage.QuoteStorage
+import xyz.malefic.daily.format.Entry
+import xyz.malefic.daily.format.entryHistoryLens
+import xyz.malefic.daily.format.entryLens
+import xyz.malefic.daily.storage.EntryStorage
 import java.nio.file.Path
 
 class DailyMaleficTest {
     @TempDir
     lateinit var tempDir: Path
 
-    private lateinit var storage: QuoteStorage
+    private lateinit var storage: EntryStorage
     private lateinit var testApp: HttpHandler
 
     @BeforeEach
     fun setup() {
-        storage = QuoteStorage(tempDir.toString())
+        storage = EntryStorage(tempDir.toString())
         testApp = createApp(storage, apiKey = null)
     }
 
@@ -45,64 +45,64 @@ class DailyMaleficTest {
     }
 
     @Test
-    fun `Post and get quote`() {
-        val newQuote = Quote("Author", "This is a new quote")
-        val postRequest = Request(POST, "/quote").with(quoteLens of newQuote)
+    fun `Post and get entry`() {
+        val newEntry = Entry("Author", "This is a new entry")
+        val postRequest = Request(POST, "/entry").with(entryLens of newEntry)
         val postResponse = testApp(postRequest)
 
         postResponse shouldHaveStatus OK
-        quoteLens(postResponse) shouldBe newQuote
+        entryLens(postResponse) shouldBe newEntry
 
-        val getResponse = testApp(Request(GET, "/quote"))
+        val getResponse = testApp(Request(GET, "/entry"))
 
         getResponse shouldHaveStatus OK
-        quoteLens(getResponse) shouldBe newQuote
+        entryLens(getResponse) shouldBe newEntry
     }
 
     @Test
-    fun `Quote persists after server restart`() {
-        // Post a quote
-        val newQuote = Quote("Persistence Author", "This quote should persist")
-        val postRequest = Request(POST, "/quote").with(quoteLens of newQuote)
+    fun `Entry persists after server restart`() {
+        // Post an entry
+        val newEntry = Entry("Persistence Author", "This entry should persist")
+        val postRequest = Request(POST, "/entry").with(entryLens of newEntry)
         testApp(postRequest)
 
         // Create new app instance (simulating restart)
-        val newStorage = QuoteStorage(tempDir.toString())
+        val newStorage = EntryStorage(tempDir.toString())
         val newApp = createApp(newStorage, apiKey = null)
 
-        // Get quote from new instance
-        val getResponse = newApp(Request(GET, "/quote"))
+        // Get entry from new instance
+        val getResponse = newApp(Request(GET, "/entry"))
 
         getResponse shouldHaveStatus OK
-        quoteLens(getResponse) shouldBe newQuote
+        entryLens(getResponse) shouldBe newEntry
     }
 
     @Test
-    fun `Initial quote is default when no stored quote exists`() {
-        val getResponse = testApp(Request(GET, "/quote"))
+    fun `Initial entry is default when no stored entry exists`() {
+        val getResponse = testApp(Request(GET, "/entry"))
 
         getResponse shouldHaveStatus OK
-        val quote = quoteLens(getResponse)
-        quote.author shouldBe "Unknown"
-        quote.text shouldBe "No quote available"
+        val entry = entryLens(getResponse)
+        entry.author shouldBe "Unknown"
+        entry.text shouldBe "No entry available"
     }
 
     @Test
-    fun `Quote history tracks all saved quotes`() {
-        val quote1 = Quote("Author 1", "First quote")
-        val quote2 = Quote("Author 2", "Second quote")
+    fun `Entry history tracks all saved entries`() {
+        val entry1 = Entry("Author 1", "First entry")
+        val entry2 = Entry("Author 2", "Second entry")
 
-        testApp(Request(POST, "/quote").with(quoteLens of quote1))
-        testApp(Request(POST, "/quote").with(quoteLens of quote2))
+        testApp(Request(POST, "/entry").with(entryLens of entry1))
+        testApp(Request(POST, "/entry").with(entryLens of entry2))
 
-        val historyResponse = testApp(Request(GET, "/quote/history"))
+        val historyResponse = testApp(Request(GET, "/entry/history"))
         historyResponse shouldHaveStatus OK
 
-        val history = quoteHistoryLens(historyResponse)
-        history.size shouldBe 3 // default + 2 new quotes
+        val history = entryHistoryLens(historyResponse)
+        history.size shouldBe 3 // default + 2 new entries
         history[1].author shouldBe "Author 1"
-        history[1].text shouldBe "First quote"
+        history[1].text shouldBe "First entry"
         history[2].author shouldBe "Author 2"
-        history[2].text shouldBe "Second quote"
+        history[2].text shouldBe "Second entry"
     }
 }

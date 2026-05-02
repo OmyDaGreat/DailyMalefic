@@ -16,18 +16,18 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
-import xyz.malefic.daily.format.quoteHistoryLens
-import xyz.malefic.daily.format.quoteLens
-import xyz.malefic.daily.storage.QuoteStorage
+import xyz.malefic.daily.format.entryHistoryLens
+import xyz.malefic.daily.format.entryLens
+import xyz.malefic.daily.storage.EntryStorage
 
 fun createApp(
-    storage: QuoteStorage,
+    storage: EntryStorage,
     apiKey: String? = System.getenv("API_KEY"),
 ): HttpHandler {
     val corsPolicy =
         CorsPolicy(
             headers = listOf("Content-Type"),
-            methods = listOf(GET),
+            methods = listOf(GET, POST),
             originPolicy = AllowAllOriginPolicy,
         )
 
@@ -39,44 +39,45 @@ fun createApp(
             "/health" bind GET to {
                 Response(OK).body("healthy")
             },
-            "/quote" bind GET to {
-                Response(OK).with(quoteLens of storage.loadQuote())
+            "/entry" bind GET to {
+                Response(OK).with(entryLens of storage.loadEntry())
             },
-            "/quote/history" bind GET to {
-                Response(OK).with(quoteHistoryLens of storage.loadHistory())
+            "/entry/history" bind GET to {
+                Response(OK).with(entryHistoryLens of storage.loadHistory())
             },
         )
 
     val postRoutes =
         routes(
-            "/quote" bind POST to { request ->
+            "/entry" bind POST to { request ->
                 // API key authentication
                 val requestApiKey = request.header("X-API-Key")
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
-                    val newQuote = quoteLens(request)
-                    storage.saveQuote(newQuote)
-                    Response(OK).with(quoteLens of newQuote)
+                    val newEntry = entryLens(request)
+                    storage.saveEntry(newEntry)
+                    Response(OK).with(entryLens of newEntry)
                 }
             },
         )
 
-    val corsGetRoutes = ServerFilters.Cors(corsPolicy).then(getRoutes)
-    val corsPostRoutes = ServerFilters.Cors(corsPolicy).then(postRoutes)
+    val corsFilter = ServerFilters.Cors(corsPolicy)
 
-    return routes(
-        "" bind GET to corsGetRoutes,
-        "" bind POST to corsPostRoutes,
+    return corsFilter.then(
+        routes(
+            "" bind GET to getRoutes,
+            "" bind POST to postRoutes,
+        ),
     )
 }
 
-val app: HttpHandler by lazy { createApp(QuoteStorage()) }
+val app: HttpHandler by lazy { createApp(EntryStorage()) }
 
 fun main() {
     val printingApp: HttpHandler = PrintRequest().then(app)
 
     val server = printingApp.asServer(Undertow(7290)).start()
 
-    println("Server started on " + server.port())
+    println("Server started on port ${server.port()}!")
 }

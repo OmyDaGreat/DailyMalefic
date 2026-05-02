@@ -7,7 +7,7 @@ services:
       - JAVA_OPTS=-Xmx512m
       - API_KEY=${API_KEY:-}
     volumes:
-      - quote_data:/data
+      - entry_data:/data
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:7290/health"]
       interval: 30s
@@ -21,5 +21,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  quote_data:
+  entry_data:
     driver: local

@@ -58,5 +58,5 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 
-    implementation(libs.kotlin.stdlib.jdk8)
+    implementation(libs.kotlinx.datetime)
 }
