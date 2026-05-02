@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 http4k = "6.45.1.0"
 jackson = "2.21.3"
 junit = "6.0.3"
