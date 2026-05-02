@@ -27,7 +27,7 @@ class DailyMaleficTest {
     @BeforeEach
     fun setup() {
         storage = QuoteStorage(tempDir.toString())
-        testApp = createApp(storage, test = true, apiKey = null)
+        testApp = createApp(storage, apiKey = null)
     }
 
     @Test
@@ -68,7 +68,7 @@ class DailyMaleficTest {
 
         // Create new app instance (simulating restart)
         val newStorage = QuoteStorage(tempDir.toString())
-        val newApp = createApp(newStorage, test = true, apiKey = null)
+        val newApp = createApp(newStorage, apiKey = null)
 
         // Get quote from new instance
         val getResponse = newApp(Request(GET, "/quote"))

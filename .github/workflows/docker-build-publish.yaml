@@ -45,8 +45,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/dailymalefic:latest
             ${{ secrets.DOCKER_USERNAME }}/dailymalefic:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/dailymalefic:latest
           # Enable BuildKit cache
           cache-from: type=gha
           cache-to: type=gha,mode=max
