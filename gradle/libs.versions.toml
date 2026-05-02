@@ -3,7 +3,7 @@ kotlin = "2.3.21"
 http4k = "6.45.1.0"
 jackson = "2.21.3"
 junit = "6.0.3"
-datetime = "0.7.1"
+datetime = "0.7.1-0.6.x-compat"
 
 [libraries]
 http4k-bom = { module = "org.http4k:http4k-bom", version.ref = "http4k" }
