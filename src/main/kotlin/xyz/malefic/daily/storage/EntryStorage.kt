@@ -57,10 +57,7 @@ class EntryStorage(
             Entry(
                 entry.author,
                 entry.text,
-                Clock.System
-                    .now()
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                    .date,
+                entry.date,
             ),
         )
         mapper.writeValue(historyFile, history)
