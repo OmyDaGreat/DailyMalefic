@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
@@ -17,10 +17,7 @@ buildscript {
 }
 
 kotlin {
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(23))
-    }
-    jvmToolchain(23)
+    jvmToolchain(25)
 }
 
 application {
@@ -35,7 +32,7 @@ tasks {
     withType<KotlinJvmCompile>().configureEach {
         compilerOptions {
             allWarningsAsErrors = false
-            jvmTarget.set(JVM_23)
+            jvmTarget.set(JVM_25)
             freeCompilerArgs.add("-Xjvm-default=all")
         }
     }
