@@ -60,7 +60,7 @@ fun createApp(
                                 runBlocking {
                                     Music.search(requestEntry.songQuery)
                                 }
-                            requestEntry.copy(song = foundSong, songQuery = null)
+                            requestEntry.copy(song = foundSong?.toEntrySong(), songQuery = null)
                         } else {
                             requestEntry.copy(songQuery = null)
                         }
