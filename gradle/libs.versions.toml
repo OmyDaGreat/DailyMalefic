@@ -3,7 +3,7 @@ kotlin = "2.3.21"
 http4k = "6.46.0.0"
 jackson = "2.21.3"
 junit = "6.0.3"
-datetime = "0.7.1"
+ytm = "0.4.3"
 
 [libraries]
 http4k-bom = { module = "org.http4k:http4k-bom", version.ref = "http4k" }
@@ -22,7 +22,7 @@ junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.re
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
-kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "datetime" }
+ytm-api = { group = "dev.toastbits", name = "ytm-kt", version.ref = "ytm" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

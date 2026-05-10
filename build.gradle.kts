@@ -26,6 +26,7 @@ application {
 
 repositories {
     mavenCentral()
+    maven("https://maven.toastbits.dev")
 }
 
 tasks {
@@ -50,10 +51,13 @@ dependencies {
     implementation(libs.bundles.http4k)
     implementation(libs.jackson.datatype.jsr310)
 
+    implementation(libs.ytm.api) {
+        // Avoid duplicate NewPipeExtractor-v0.24.5.jar entries during distZip.
+        exclude(group = "com.github.teamnewpipe.NewPipeExtractor", module = "NewPipeExtractor")
+    }
+
     testImplementation(libs.bundles.http4k.testing)
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
-
-    implementation(libs.kotlinx.datetime)
 }

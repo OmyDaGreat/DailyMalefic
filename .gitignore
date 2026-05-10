@@ -129,3 +129,5 @@ gradle-app.setting
 
 .idea/google-java-format.xml
 .idea/ktlint-plugin.xml
+
+local.properties

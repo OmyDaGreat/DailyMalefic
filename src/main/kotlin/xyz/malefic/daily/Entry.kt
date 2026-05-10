@@ -1,11 +1,8 @@
-package xyz.malefic.daily.format
+package xyz.malefic.daily
 
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import java.time.LocalDate
 import org.http4k.core.Body
 import org.http4k.format.Jackson.auto
-import kotlin.time.Clock
 
 /**
  * Data class representing an entry with an author, text, and date.
@@ -17,11 +14,7 @@ import kotlin.time.Clock
 data class Entry(
     val author: String,
     val text: String,
-    val date: LocalDate =
-        Clock.System
-            .now()
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .date,
+    val date: LocalDate = LocalDate.now(),
 )
 
 /**

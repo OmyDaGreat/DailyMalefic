@@ -11,10 +11,6 @@ import org.http4k.kotest.shouldHaveStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import xyz.malefic.daily.format.Entry
-import xyz.malefic.daily.format.entryHistoryLens
-import xyz.malefic.daily.format.entryLens
-import xyz.malefic.daily.storage.EntryStorage
 import java.nio.file.Path
 
 class DailyMaleficTest {

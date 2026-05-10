@@ -16,9 +16,6 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
-import xyz.malefic.daily.format.entryHistoryLens
-import xyz.malefic.daily.format.entryLens
-import xyz.malefic.daily.storage.EntryStorage
 
 fun createApp(
     storage: EntryStorage,
@@ -50,7 +47,6 @@ fun createApp(
     val postRoutes =
         routes(
             "/entry" bind POST to { request ->
-                // API key authentication
                 val requestApiKey = request.header("X-API-Key")
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")

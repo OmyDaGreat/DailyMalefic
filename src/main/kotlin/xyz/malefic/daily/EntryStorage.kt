@@ -1,13 +1,10 @@
-package xyz.malefic.daily.storage
+package xyz.malefic.daily
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import xyz.malefic.daily.format.Entry
 import java.io.File
-import kotlin.time.Clock
+import java.time.LocalDate
 
 /**
  * Class responsible for storing and retrieving entries from a JSON file.
@@ -31,10 +28,7 @@ class EntryStorage(
                 Entry(
                     "Unknown",
                     "No entry available",
-                    Clock.System
-                        .now()
-                        .toLocalDateTime(TimeZone.currentSystemDefault())
-                        .date,
+                    LocalDate.now(),
                 ),
             )
         }
@@ -75,10 +69,7 @@ class EntryStorage(
             Entry(
                 "Unknown",
                 "No entry available",
-                Clock.System
-                    .now()
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                    .date,
+                LocalDate.now(),
             )
         }
 
