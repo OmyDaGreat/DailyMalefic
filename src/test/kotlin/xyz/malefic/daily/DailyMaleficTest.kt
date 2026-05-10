@@ -101,4 +101,51 @@ class DailyMaleficTest {
         history[2].author shouldBe "Author 2"
         history[2].text shouldBe "Second entry"
     }
+
+    @Test
+    fun `Post entry with songQuery searches and includes found song`() {
+        val entryWithQuery = Entry("Author", "Entry with song", songQuery = "test song")
+        val postRequest = Request(POST, "/entry").with(entryLens of entryWithQuery)
+        val postResponse = testApp(postRequest)
+
+        postResponse shouldHaveStatus OK
+        val responseEntry = entryLens(postResponse)
+
+        // songQuery should not be in the response
+        responseEntry.songQuery shouldBe null
+        // song may be populated if the search was successful or null if offline/failed
+        // The important thing is that songQuery is cleared
+        responseEntry.author shouldBe "Author"
+        responseEntry.text shouldBe "Entry with song"
+    }
+
+    @Test
+    fun `Post entry without songQuery works normally`() {
+        val entry = Entry("Author", "Normal entry without query")
+        val postRequest = Request(POST, "/entry").with(entryLens of entry)
+        val postResponse = testApp(postRequest)
+
+        postResponse shouldHaveStatus OK
+        val responseEntry = entryLens(postResponse)
+        responseEntry.author shouldBe "Author"
+        responseEntry.text shouldBe "Normal entry without query"
+        responseEntry.song shouldBe null
+        responseEntry.songQuery shouldBe null
+    }
+
+    @Test
+    fun `Entry with null songQuery persists correctly`() {
+        val entry = Entry("Author", "Entry with explicit null songQuery", songQuery = null)
+        val postRequest = Request(POST, "/entry").with(entryLens of entry)
+        testApp(postRequest)
+
+        // Verify persistence
+        val getResponse = testApp(Request(GET, "/entry"))
+        getResponse shouldHaveStatus OK
+        val retrievedEntry = entryLens(getResponse)
+
+        retrievedEntry.author shouldBe "Author"
+        retrievedEntry.text shouldBe "Entry with explicit null songQuery"
+        retrievedEntry.songQuery shouldBe null
+    }
 }

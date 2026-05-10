@@ -4,6 +4,7 @@ http4k = "6.46.0.0"
 jackson = "2.21.3"
 junit = "6.0.3"
 ytm = "0.4.3"
+coroutines = "1.11.0"
 
 [libraries]
 http4k-bom = { module = "org.http4k:http4k-bom", version.ref = "http4k" }
@@ -23,6 +24,8 @@ junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", vers
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 ytm-api = { group = "dev.toastbits", name = "ytm-kt", version.ref = "ytm" }
+
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

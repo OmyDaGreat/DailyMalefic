@@ -50,6 +50,7 @@ dependencies {
     implementation(platform(libs.http4k.bom))
     implementation(libs.bundles.http4k)
     implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.ytm.api) {
         // Avoid duplicate NewPipeExtractor-v0.24.5.jar entries during distZip.

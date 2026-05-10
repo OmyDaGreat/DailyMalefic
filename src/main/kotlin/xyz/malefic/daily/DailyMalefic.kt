@@ -1,5 +1,6 @@
 package xyz.malefic.daily
 
+import kotlinx.coroutines.runBlocking
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
@@ -51,9 +52,21 @@ fun createApp(
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
-                    val newEntry = entryLens(request)
-                    storage.saveEntry(newEntry)
-                    Response(OK).with(entryLens of newEntry)
+                    val requestEntry = entryLens(request)
+
+                    val finalEntry =
+                        if (!requestEntry.songQuery.isNullOrBlank()) {
+                            val foundSong =
+                                runBlocking {
+                                    Music.search(requestEntry.songQuery)
+                                }
+                            requestEntry.copy(song = foundSong, songQuery = null)
+                        } else {
+                            requestEntry.copy(songQuery = null)
+                        }
+
+                    storage.saveEntry(finalEntry)
+                    Response(OK).with(entryLens of finalEntry)
                 }
             },
         )

@@ -43,17 +43,11 @@ class EntryStorage(
      * @param entry The entry to be saved.
      */
     fun saveEntry(entry: Entry) {
-        mapper.writeValue(file, entry)
+        val persistentEntry = entry.copy(songQuery = null)
+        mapper.writeValue(file, persistentEntry)
 
-        // Append to history
         val history = loadHistory().toMutableList()
-        history.add(
-            Entry(
-                entry.author,
-                entry.text,
-                entry.date,
-            ),
-        )
+        history.add(persistentEntry)
         mapper.writeValue(historyFile, history)
     }
 
