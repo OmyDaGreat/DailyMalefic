@@ -6,6 +6,7 @@ import org.http4k.core.Method.DELETE
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
 import org.http4k.core.Response
+import org.http4k.core.Status.Companion.BAD_REQUEST
 import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.Status.Companion.UNAUTHORIZED
@@ -19,6 +20,8 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Undertow
 import org.http4k.server.asServer
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 fun createApp(
     storage: EntryStorage,
@@ -39,11 +42,33 @@ fun createApp(
             "/health" bind GET to {
                 Response(OK).body("healthy")
             },
-            "/entry" bind GET to {
-                Response(OK).with(entryHistoryLens of storage.loadLatestDateEntries())
+            "/entry" bind GET to { request ->
+                val id = request.query("id")
+                val date = request.query("date")
+                if (!id.isNullOrBlank()) {
+                    val found = storage.loadEntry(id)
+                    if (found != null) {
+                        Response(OK).with(entryLens of found)
+                    } else {
+                        Response(NOT_FOUND).body("Entry not found")
+                    }
+                } else if (!date.isNullOrBlank()) {
+                    try {
+                        val found = storage.loadEntry(LocalDate.parse(date))
+                        if (found.isNotEmpty()) {
+                            Response(OK).with(entryListLens of found)
+                        } else {
+                            Response(NOT_FOUND).body("Entry not found")
+                        }
+                    } catch (_: DateTimeParseException) {
+                        Response(BAD_REQUEST).body("Invalid date format, expected YYYY-MM-DD")
+                    }
+                } else {
+                    Response(OK).with(entryListLens of storage.loadLatestDateEntries())
+                }
             },
             "/entry/history" bind GET to {
-                Response(OK).with(entryHistoryLens of storage.loadHistory())
+                Response(OK).with(entryListLens of storage.loadHistory())
             },
         )
 

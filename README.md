@@ -19,7 +19,23 @@ Health check endpoint returning "pong"
 Health check endpoint returning "healthy" (used by Docker healthcheck)
 
 ### GET /entry
-Retrieve all entries from the most recent date (multiple entries can exist for the same date)
+Retrieve entries using one of three modes:
+
+- No query parameters: return all entries from the most recent date, sorted by `id`
+- `?id=<entry-id>`: return the single entry with that `id`
+- `?date=YYYY-MM-DD`: return all entries for that date, sorted by `id`
+
+If both `id` and `date` are provided, `id` takes precedence.
+
+**Responses:**
+- No query parameters or `?date=` return an array of entries
+- `?id=` returns a single entry object
+
+**Errors:**
+- `404 Entry not found` when an `id` does not exist or a `date` has no entries
+- `400 Invalid date format, expected YYYY-MM-DD` when `date` is not valid
+
+#### Example: most recent date
 ```json
 [
   {
@@ -37,6 +53,30 @@ Retrieve all entries from the most recent date (multiple entries can exist for t
         }
       ]
     }
+  }
+]
+```
+
+#### Example: entry by id
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "author": "Author Name",
+  "text": "Entry text",
+  "date": "2026-05-11",
+  "song": null
+}
+```
+
+#### Example: entries by date
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "author": "Author Name",
+    "text": "Entry text",
+    "date": "2026-05-11",
+    "song": null
   }
 ]
 ```

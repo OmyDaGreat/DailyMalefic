@@ -67,12 +67,23 @@ class EntryStorage(
      *
      * @return A list of entries from the most recent date, sorted by ID for consistency.
      */
-    fun loadLatestDateEntries(): List<Entry> {
-        val history = loadHistory()
-        if (history.isEmpty()) {
-            return emptyList()
-        }
-        val latestDate = history.maxOf { it.date }
-        return history.filter { it.date == latestDate }.sortedBy { it.id }
-    }
+    fun loadLatestDateEntries(): List<Entry> =
+        loadHistory().takeIf { it.isNotEmpty() }?.let { h -> h.filter { it.date == h.maxOf(Entry::date) }.sortedBy(Entry::id) }
+            ?: emptyList()
+
+    /**
+     * Loads an entry by its ID.
+     *
+     * @param id The ID of the entry to load.
+     * @return The entry with the specified ID, or null if not found.
+     */
+    fun loadEntry(id: String): Entry? = loadHistory().firstOrNull { it.id == id }
+
+    /**
+     * Loads all entries from a specific date.
+     *
+     * @param date The date to filter entries by.
+     * @return A list of entries from the specified date, sorted by ID for consistency.
+     */
+    fun loadEntry(date: LocalDate): List<Entry> = loadHistory().filter { it.date == date }.sortedBy(Entry::id)
 }

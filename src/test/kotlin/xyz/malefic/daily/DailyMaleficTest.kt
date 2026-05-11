@@ -94,7 +94,7 @@ class DailyMaleficTest {
         val historyResponse = testApp(Request(GET, "/entry/history"))
         historyResponse shouldHaveStatus OK
 
-        val history = entryHistoryLens(historyResponse)
+        val history = entryListLens(historyResponse)
         history.size shouldBe 3 // default + 2 new entries
         history[1].author shouldBe "Author 1"
         history[1].text shouldBe "First entry"

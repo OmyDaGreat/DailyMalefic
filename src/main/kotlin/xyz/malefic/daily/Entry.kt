@@ -64,4 +64,4 @@ val entryLens = Body.auto<Entry>().toLens()
 /**
  * Lens to handle the conversion between HTTP bodies and lists of Entry objects.
  */
-val entryHistoryLens = Body.auto<List<Entry>>().toLens()
+val entryListLens = Body.auto<List<Entry>>().toLens()
