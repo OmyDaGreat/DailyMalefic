@@ -4,6 +4,8 @@ import io.kotest.matchers.shouldBe
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
+import org.http4k.core.Method.DELETE
+import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Request
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.with
@@ -59,6 +61,38 @@ class DailyMaleficTest {
     }
 
     @Test
+    fun `Delete entry removes it from storage and history`() {
+        val newEntry = Entry(author = "Author", text = "To be deleted")
+        val savedEntry = entryLens(testApp(Request(POST, "/entry").with(entryLens of newEntry)))
+
+        val deleteResponse = testApp(Request(DELETE, "/entry?id=${savedEntry.id}"))
+
+        deleteResponse shouldHaveStatus OK
+        deleteResponse.bodyString() shouldBe "Entry deleted"
+        storage.loadHistory().isEmpty() shouldBe true
+
+        val getResponse = testApp(Request(GET, "/entry?id=${savedEntry.id}"))
+        getResponse shouldHaveStatus NOT_FOUND
+        getResponse.bodyString() shouldBe "Entry not found"
+    }
+
+    @Test
+    fun `Delete entry with missing id returns bad request`() {
+        val deleteResponse = testApp(Request(DELETE, "/entry"))
+
+        deleteResponse.status.code shouldBe 400
+        deleteResponse.bodyString() shouldBe "Missing id"
+    }
+
+    @Test
+    fun `Delete entry for unknown id returns not found`() {
+        val deleteResponse = testApp(Request(DELETE, "/entry?id=does-not-exist"))
+
+        deleteResponse shouldHaveStatus NOT_FOUND
+        deleteResponse.bodyString() shouldBe "Entry not found, nothing deleted"
+    }
+
+    @Test
     fun `Entry persists after server restart`() {
         // Post an entry
         val newEntry = Entry(author = "Persistence Author", text = "This entry should persist")
@@ -76,6 +110,24 @@ class DailyMaleficTest {
 
         getResponse shouldHaveStatus OK
         entryLens(getResponse) shouldBe savedEntry
+    }
+
+    @Test
+    fun `Deleted entry does not reappear after restart`() {
+        val newEntry = Entry(author = "Author", text = "Persisted then deleted")
+        val savedEntry = entryLens(testApp(Request(POST, "/entry").with(entryLens of newEntry)))
+
+        val deleteResponse = testApp(Request(DELETE, "/entry?id=${savedEntry.id}"))
+        deleteResponse shouldHaveStatus OK
+
+        val newStorage = EntryStorage(tempDir.toString())
+        val newApp = createApp(newStorage, apiKey = null)
+
+        newStorage.loadHistory().isEmpty() shouldBe true
+
+        val getResponse = newApp(Request(GET, "/entry?id=${savedEntry.id}"))
+        getResponse shouldHaveStatus NOT_FOUND
+        getResponse.bodyString() shouldBe "Entry not found"
     }
 
     @Test

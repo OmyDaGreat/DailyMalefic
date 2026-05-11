@@ -30,7 +30,7 @@ fun createApp(
     val corsPolicy =
         CorsPolicy(
             headers = listOf("Content-Type"),
-            methods = listOf(GET, POST),
+            methods = listOf(GET, POST, DELETE),
             originPolicy = AllowAllOriginPolicy,
         )
 
@@ -101,14 +101,16 @@ fun createApp(
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
-                    val entryToDelete = entryLens(request)
-                    val history = storage.loadHistory().toMutableList()
-                    val removed = history.removeIf { it.id == entryToDelete.id }
-                    if (removed) {
-                        storage.saveEntry(entryToDelete.copy(text = "[DELETED]", song = null))
-                        Response(OK).body("Entry deleted")
+                    val id = request.query("id")
+                    if (id.isNullOrEmpty()) {
+                        Response(BAD_REQUEST).body("Missing id")
                     } else {
-                        Response(NOT_FOUND).body("Entry not found, nothing deleted")
+                        val removed = storage.deleteEntry(id)
+                        if (removed) {
+                            Response(OK).body("Entry deleted")
+                        } else {
+                            Response(NOT_FOUND).body("Entry not found, nothing deleted")
+                        }
                     }
                 }
             },
@@ -120,6 +122,7 @@ fun createApp(
         routes(
             "" bind GET to getRoutes,
             "" bind POST to postRoutes,
+            "" bind DELETE to postRoutes,
         ),
     )
 }

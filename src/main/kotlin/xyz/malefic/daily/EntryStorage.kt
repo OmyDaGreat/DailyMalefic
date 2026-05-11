@@ -123,4 +123,22 @@ class EntryStorage(
      * @return A list of entries from the specified date, sorted by ID for consistency.
      */
     fun loadEntry(date: LocalDate): List<Entry> = loadHistory().filter { it.date == date }.sortedWith(entryIdComparator)
+
+    /**
+     * Deletes an entry by its ID from the history file.
+     *
+     * @param id The ID of the entry to delete.
+     * @return true if an entry was removed, false if no matching entry was found.
+     */
+    @Synchronized
+    fun deleteEntry(id: String?): Boolean {
+        if (id.isNullOrBlank()) return false
+        val history = loadHistory().toMutableList()
+        val removed = history.removeIf { it.id == id }
+        if (removed) {
+            history.sortWith(historyComparator)
+            mapper.writeValue(historyFile, history)
+        }
+        return removed
+    }
 }
