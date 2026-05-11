@@ -49,7 +49,3 @@ object Music {
         return ytm.LoadSong.loadSong(firstSong.id).getOrNull() ?: firstSong
     }
 }
-
-suspend fun main() {
-    println(Music.search("re6ce anything you want")?.toEntrySong())
-}

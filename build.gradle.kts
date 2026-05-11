@@ -52,7 +52,9 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.kotlinx.coroutines.core)
 
-    implementation(libs.ytm.api)
+    implementation(libs.ytm.api) {
+        exclude(group = "com.github.teamnewpipe.NewPipeExtractor", module = "NewPipeExtractor")
+    }
 
     testImplementation(libs.bundles.http4k.testing)
     testImplementation(libs.junit.jupiter.api)

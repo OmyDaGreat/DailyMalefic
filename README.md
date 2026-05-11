@@ -1,6 +1,6 @@
 # DailyMalefic
 
-A lightweight HTTP service for managing daily journal entries with history tracking, music integration, and API key authentication.
+A lightweight REST API service for managing daily journal entries with history tracking, music integration, and API key authentication.
 
 ## Features
 
