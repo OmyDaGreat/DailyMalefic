@@ -10,6 +10,24 @@ A lightweight HTTP service for managing daily journal entries with history track
 - **API Key Authentication**: Secure POST endpoints with API key authentication
 - **Persistence**: File-based storage with automatic initialization
 
+## Docker
+
+Use the included `docker-compose.yml`:
+
+```bash
+export API_KEY=your-secret-key   # optional
+docker compose up --build
+```
+
+Or pull and run the `maleficmarauder/dailymalefic` image directly from Docker Hub:
+
+```bash
+docker pull maleficmarauder/dailymalefic
+docker run -p 7290:7290 -e API_KEY=your-secret-key -v entry_data:/data maleficmarauder/dailymalefic
+```
+
+These both start the app on port `7290`, mount `entry_data` to `/data`, and pass `API_KEY` through if you set it.
+
 ## Endpoints
 
 ### GET /ping
@@ -58,7 +76,7 @@ No query parameters:
 ```json
 [
   {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "id": "1",
     "author": "Author Name",
     "text": "Entry text",
     "date": "2026-05-11",
@@ -80,7 +98,7 @@ No query parameters:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "1",
   "author": "Author Name",
   "text": "Entry text",
   "date": "2026-05-11",
@@ -93,7 +111,7 @@ No query parameters:
 ```json
 [
   {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "id": "1",
     "author": "Author Name",
     "text": "Entry text",
     "date": "2026-05-11",
@@ -114,7 +132,7 @@ No query parameters:
 ```json
 [
   {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "id": "1",
     "author": "Author Name",
     "text": "Entry text",
     "date": "2026-05-09",
@@ -130,7 +148,7 @@ No query parameters:
     }
   },
   {
-    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "id": "2",
     "author": "Author Name",
     "text": "Entry text",
     "date": "2026-05-11",
@@ -163,7 +181,7 @@ No query parameters:
 **Request example: update existing entry by ID**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "1",
   "author": "Updated Author",
   "text": "Updated entry text",
   "date": "2026-05-11",
@@ -186,7 +204,7 @@ No query parameters:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "1",
   "author": "New Author",
   "text": "Entry text",
   "date": "2026-05-11",
@@ -217,7 +235,7 @@ No query parameters:
 **Request example:**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000"
+  "id": "1"
 }
 ```
 
@@ -248,17 +266,6 @@ Entry not found, nothing deleted
 
 - `API_KEY`: Optional API key for POST authentication. If set, all POST requests must include `X-API-Key` header. Otherwise, POST endpoints are open without authentication.
 - `JAVA_OPTS`: Java runtime options (default: `-Xmx512m`)
-
-## Docker
-
-Use the included `docker-compose.yml`:
-
-```bash
-export API_KEY=your-secret-key   # optional
-docker compose up --build
-```
-
-That starts the app on port `7290`, mounts `entry_data` to `/data`, and passes `API_KEY` through if you set it.
 
 ## Significant Libraries
 

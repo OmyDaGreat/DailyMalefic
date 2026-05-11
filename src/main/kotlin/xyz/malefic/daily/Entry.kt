@@ -27,12 +27,16 @@ data class Entry(
     val songQuery: String? = null,
 )
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class EntrySongArtist(
-    val id: String,
-    val name: String? = null,
-)
-
+/**
+ * Data class representing a song with minimal information for entry association.
+ *
+ * This class provides a lightweight representation of a song, suitable for storing
+ * song references within entries. Unknown JSON properties are ignored during deserialization.
+ *
+ * @property id A unique identifier for the song.
+ * @property name The title of the song (optional).
+ * @property artists A list of artists associated with the song (defaults to empty list).
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class EntrySong(
     val id: String,
@@ -40,6 +44,27 @@ data class EntrySong(
     val artists: List<EntrySongArtist> = emptyList(),
 )
 
+/**
+ * Data class representing a song artist with minimal information.
+ *
+ * @property id A unique identifier for the artist.
+ * @property name The name of the artist (optional).
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class EntrySongArtist(
+    val id: String,
+    val name: String? = null,
+)
+
+/**
+ * Converts a [YtmSong] to an [EntrySong].
+ *
+ * This extension function transforms a YouTube Music song object into the minimal
+ * EntrySong representation used by this application, extracting the song's id, name,
+ * and a list of artists.
+ *
+ * @return An [EntrySong] containing the song's id, name, and artists information.
+ */
 fun YtmSong.toEntrySong(): EntrySong =
     EntrySong(
         id = id,
