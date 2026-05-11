@@ -42,35 +42,38 @@ class DailyMaleficTest {
 
     @Test
     fun `Post and get entry`() {
-        val newEntry = Entry("Author", "This is a new entry")
+        val newEntry = Entry(author = "Author", text = "This is a new entry")
         val postRequest = Request(POST, "/entry").with(entryLens of newEntry)
         val postResponse = testApp(postRequest)
 
         postResponse shouldHaveStatus OK
-        entryLens(postResponse) shouldBe newEntry
+        val responseEntry = entryLens(postResponse)
+        responseEntry.author shouldBe newEntry.author
+        responseEntry.text shouldBe newEntry.text
 
-        val getResponse = testApp(Request(GET, "/entry"))
+        val getResponse = testApp(Request(GET, "/entry?id=${responseEntry.id}"))
 
         getResponse shouldHaveStatus OK
-        entryLens(getResponse) shouldBe newEntry
+        entryLens(getResponse) shouldBe responseEntry
     }
 
     @Test
     fun `Entry persists after server restart`() {
         // Post an entry
-        val newEntry = Entry("Persistence Author", "This entry should persist")
+        val newEntry = Entry(author = "Persistence Author", text = "This entry should persist")
         val postRequest = Request(POST, "/entry").with(entryLens of newEntry)
-        testApp(postRequest)
+        val postResponse = testApp(postRequest)
+        val savedEntry = entryLens(postResponse)
 
         // Create new app instance (simulating restart)
         val newStorage = EntryStorage(tempDir.toString())
         val newApp = createApp(newStorage, apiKey = null)
 
-        // Get entry from new instance
-        val getResponse = newApp(Request(GET, "/entry"))
+        // Get entry from new instance by ID
+        val getResponse = newApp(Request(GET, "/entry?id=${savedEntry.id}"))
 
         getResponse shouldHaveStatus OK
-        entryLens(getResponse) shouldBe newEntry
+        entryLens(getResponse) shouldBe savedEntry
     }
 
     @Test
@@ -78,15 +81,14 @@ class DailyMaleficTest {
         val getResponse = testApp(Request(GET, "/entry"))
 
         getResponse shouldHaveStatus OK
-        val entry = entryLens(getResponse)
-        entry.author shouldBe "Unknown"
-        entry.text shouldBe "No entry available"
+        val entries = entryListLens(getResponse)
+        entries.isEmpty() shouldBe true
     }
 
     @Test
     fun `Entry history tracks all saved entries`() {
-        val entry1 = Entry("Author 1", "First entry")
-        val entry2 = Entry("Author 2", "Second entry")
+        val entry1 = Entry(author = "Author 1", text = "First entry")
+        val entry2 = Entry(author = "Author 2", text = "Second entry")
 
         testApp(Request(POST, "/entry").with(entryLens of entry1))
         testApp(Request(POST, "/entry").with(entryLens of entry2))
@@ -95,16 +97,16 @@ class DailyMaleficTest {
         historyResponse shouldHaveStatus OK
 
         val history = entryListLens(historyResponse)
-        history.size shouldBe 3 // default + 2 new entries
-        history[1].author shouldBe "Author 1"
-        history[1].text shouldBe "First entry"
-        history[2].author shouldBe "Author 2"
-        history[2].text shouldBe "Second entry"
+        history.size shouldBe 2 // 2 new entries
+        history[0].author shouldBe "Author 1"
+        history[0].text shouldBe "First entry"
+        history[1].author shouldBe "Author 2"
+        history[1].text shouldBe "Second entry"
     }
 
     @Test
     fun `Post entry with songQuery searches and includes found song`() {
-        val entryWithQuery = Entry("Author", "Entry with song", songQuery = "test song")
+        val entryWithQuery = Entry(author = "Author", text = "Entry with song", songQuery = "test song")
         val postRequest = Request(POST, "/entry").with(entryLens of entryWithQuery)
         val postResponse = testApp(postRequest)
 
@@ -121,7 +123,7 @@ class DailyMaleficTest {
 
     @Test
     fun `Post entry without songQuery works normally`() {
-        val entry = Entry("Author", "Normal entry without query")
+        val entry = Entry(author = "Author", text = "Normal entry without query")
         val postRequest = Request(POST, "/entry").with(entryLens of entry)
         val postResponse = testApp(postRequest)
 
@@ -135,12 +137,13 @@ class DailyMaleficTest {
 
     @Test
     fun `Entry with null songQuery persists correctly`() {
-        val entry = Entry("Author", "Entry with explicit null songQuery", songQuery = null)
+        val entry = Entry(author = "Author", text = "Entry with explicit null songQuery", songQuery = null)
         val postRequest = Request(POST, "/entry").with(entryLens of entry)
-        testApp(postRequest)
+        val postResponse = testApp(postRequest)
+        val savedEntry = entryLens(postResponse)
 
-        // Verify persistence
-        val getResponse = testApp(Request(GET, "/entry"))
+        // Verify persistence by getting the entry by ID
+        val getResponse = testApp(Request(GET, "/entry?id=${savedEntry.id}"))
         getResponse shouldHaveStatus OK
         val retrievedEntry = entryLens(getResponse)
 
