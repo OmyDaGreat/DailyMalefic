@@ -1,16 +1,14 @@
 # DailyMalefic
 
-A lightweight HTTP service for managing daily quotes with history tracking and API key authentication.
+A lightweight HTTP service for managing daily journal entries with history tracking, music integration, and API key authentication.
 
 ## Features
 
-- **Quote Management**: Store and retrieve daily quotes via REST API
-- **Quote History**: Track all historical quotes with timestamps
+- **Entry Management**: Store and retrieve daily journal entries via REST API
+- **Music Integration**: Automatically search and associate YouTube Music songs with entries
+- **Entry History**: Track all historical entries with dates
 - **API Key Authentication**: Secure POST endpoints with API key authentication
-- **CORS Support**: Pre-configured CORS policies for web clients
-- **Health Checks**: Built-in health endpoint for monitoring
 - **Persistence**: File-based storage with automatic initialization
-- **Docker Support**: Multi-platform Docker images (amd64/arm64)
 
 ## Endpoints
 
@@ -20,53 +18,151 @@ Health check endpoint returning "pong"
 ### GET /health
 Health check endpoint returning "healthy" (used by Docker healthcheck)
 
-### GET /quote
-Retrieve the current daily quote
-```json
-{
-  "author": "Author Name",
-  "text": "Quote text"
-}
-```
-
-### GET /quote/history
-Retrieve all historical quotes with timestamps
+### GET /entry
+Retrieve all entries from the most recent date (multiple entries can exist for the same date)
 ```json
 [
   {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "author": "Author Name",
-    "text": "Quote text",
-    "timestamp": "2026-04-05T01:30:00Z"
+    "text": "Entry text",
+    "date": "2026-05-11",
+    "song": {
+      "id": "song-id",
+      "name": "Song Name",
+      "artists": [
+        {
+          "id": "artist-id",
+          "name": "Artist Name"
+        }
+      ]
+    }
   }
 ]
 ```
 
-### POST /quote
-Update the current quote (requires API key authentication)
+### GET /entry/history
+Retrieve all historical entries sorted by date (ascending, so latest date is last)
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "author": "Author Name",
+    "text": "Entry text",
+    "date": "2026-05-09",
+    "song": {
+      "id": "song-id",
+      "name": "Song Name",
+      "artists": [
+        {
+          "id": "artist-id",
+          "name": "Artist Name"
+        }
+      ]
+    }
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "author": "Author Name",
+    "text": "Entry text",
+    "date": "2026-05-11",
+    "song": null
+  }
+]
+```
+
+### POST /entry
+Create a new entry or update an existing entry (requires API key authentication)
 
 **Headers:**
 - `Content-Type: application/json`
 - `X-API-Key: your-api-key` (required if API_KEY env var is set)
 
-**Body:**
+**Request Body (new entry):**
 ```json
 {
   "author": "New Author",
-  "text": "New quote text"
+  "text": "Entry text",
+  "date": "2026-05-11",
+  "songQuery": "song name or artist (optional - will auto-search YouTube Music)"
 }
+```
+
+**Request Body (update existing entry by ID):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "author": "Updated Author",
+  "text": "Updated entry text",
+  "date": "2026-05-11",
+  "songQuery": "different song (optional)"
+}
+```
+
+**Response:**
+Returns the created or updated entry with its unique ID:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "author": "New Author",
+  "text": "Entry text",
+  "date": "2026-05-11",
+  "song": {
+    "id": "song-id",
+    "name": "Song Name",
+    "artists": [
+      {
+        "id": "artist-id",
+        "name": "Artist Name"
+      }
+    ]
+  }
+}
+```
+
+**Notes:**
+- If you provide an `id` in the request body, the existing entry with that ID will be updated or a new entry with that ID will be created.
+- If you don't provide an `id`, a new unique ID will be generated automatically.
+- The `songQuery` field is optional. When provided, the service will search YouTube Music for the song and automatically populate the `song` field with the first matching result. For better search results, include both the artist and song name.
+- Multiple entries can exist with the same date. Each entry has a unique `id` for future updates.
+
+### DELETE /entry
+Delete an existing entry by ID (requires API key authentication)
+
+**Headers:**
+- `Content-Type: application/json`
+- `X-API-Key: your-api-key` (required if API_KEY env var is set)
+
+**Request Body:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response (success):**
+```
+HTTP 200 OK
+Entry deleted
+```
+
+**Response (not found):**
+```
+HTTP 404 Not Found
+Entry not found, nothing deleted
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-- `API_KEY`: Optional API key for POST authentication. If set, all POST requests must include `X-API-Key` header
+- `API_KEY`: Optional API key for POST authentication. If set, all POST requests must include `X-API-Key` header. Otherwise, POST endpoints are open without authentication.
 - `JAVA_OPTS`: Java runtime options (default: `-Xmx512m`)
 
 ## Build
 
 ```bash
-./gradlew distZip
+./gradlew build
 ```
 
 ## Run Locally
@@ -86,7 +182,7 @@ docker build -t dailymalefic .
 
 ### Run
 ```bash
-docker run -p 7290:7290 -v quote_data:/data -e API_KEY=your-secret-key dailymalefic
+docker run -p 7290:7290 -v entry_data:/data -e API_KEY=your-secret-key dailymalefic
 ```
 
 ### Docker Compose
@@ -95,31 +191,7 @@ export API_KEY=your-secret-key
 docker-compose up
 ```
 
-## Development
+## Significant Libraries
 
-### Run Tests
-```bash
-./gradlew test
-```
-
-### Dependency Management
-This project uses Gradle version catalogs (`gradle/libs.versions.toml`) for centralized dependency management. All dependencies and versions are defined in the catalog for easy maintenance and updates.
-
-### Project Structure
-- `src/main/kotlin/xyz/malefic/daily/`
-  - `DailyMalefic.kt` - Main application and HTTP routing
-  - `format/Quote.kt` - Quote data model
-  - `format/QuoteHistory.kt` - Quote history model
-  - `storage/QuoteStorage.kt` - File-based persistence layer
-- `gradle/libs.versions.toml` - Version catalog for dependency management
-
-## Technical Stack
-
-- **Language**: Kotlin 2.3.20
-- **HTTP Framework**: http4k 6.40.0.0
-- **Server**: Undertow
-- **JSON**: Jackson with Java Time support
-- **Testing**: JUnit Jupiter, Kotest, Hamkrest
-- **Build**: Gradle with Kotlin DSL
-- **Runtime**: JVM 23
-
+- **HTTP Framework**: [http4k](https://www.http4k.org/)
+- **Music API**: [syk-sh's ytm-kt](https://gitlab.com/syk.sh/ytm-kt)

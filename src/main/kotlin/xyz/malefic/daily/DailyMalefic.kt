@@ -2,9 +2,11 @@ package xyz.malefic.daily
 
 import kotlinx.coroutines.runBlocking
 import org.http4k.core.HttpHandler
+import org.http4k.core.Method.DELETE
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
 import org.http4k.core.Response
+import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.Status.Companion.UNAUTHORIZED
 import org.http4k.core.then
@@ -38,7 +40,7 @@ fun createApp(
                 Response(OK).body("healthy")
             },
             "/entry" bind GET to {
-                Response(OK).with(entryLens of storage.loadEntry())
+                Response(OK).with(entryHistoryLens of storage.loadLatestDateEntries())
             },
             "/entry/history" bind GET to {
                 Response(OK).with(entryHistoryLens of storage.loadHistory())
@@ -67,6 +69,22 @@ fun createApp(
 
                     storage.saveEntry(finalEntry)
                     Response(OK).with(entryLens of finalEntry)
+                }
+            },
+            "/entry" bind DELETE to { request ->
+                val requestApiKey = request.header("X-API-KEY")
+                if (apiKey != null && requestApiKey != apiKey) {
+                    Response(UNAUTHORIZED).body("Invalid or missing API key")
+                } else {
+                    val entryToDelete = entryLens(request)
+                    val history = storage.loadHistory().toMutableList()
+                    val removed = history.removeIf { it.id == entryToDelete.id }
+                    if (removed) {
+                        storage.saveEntry(entryToDelete.copy(text = "[DELETED]", song = null))
+                        Response(OK).body("Entry deleted")
+                    } else {
+                        Response(NOT_FOUND).body("Entry not found, nothing deleted")
+                    }
                 }
             },
         )

@@ -51,5 +51,5 @@ object Music {
 }
 
 suspend fun main() {
-    println(Music.search("Bohemian Rhapsody"))
+    println(Music.search("re6ce anything you want")?.toEntrySong())
 }

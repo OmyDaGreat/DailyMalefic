@@ -52,10 +52,7 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.kotlinx.coroutines.core)
 
-    implementation(libs.ytm.api) {
-        // Avoid duplicate NewPipeExtractor-v0.24.5.jar entries during distZip.
-        exclude(group = "com.github.teamnewpipe.NewPipeExtractor", module = "NewPipeExtractor")
-    }
+    implementation(libs.ytm.api)
 
     testImplementation(libs.bundles.http4k.testing)
     testImplementation(libs.junit.jupiter.api)
