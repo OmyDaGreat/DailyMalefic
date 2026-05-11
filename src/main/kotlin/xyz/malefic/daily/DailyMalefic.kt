@@ -92,8 +92,8 @@ fun createApp(
                             requestEntry.copy(songQuery = null)
                         }
 
-                    storage.saveEntry(finalEntry)
-                    Response(OK).with(entryLens of finalEntry)
+                    val savedEntry = storage.saveEntry(finalEntry)
+                    Response(OK).with(entryLens of savedEntry)
                 }
             },
             "/entry" bind DELETE to { request ->

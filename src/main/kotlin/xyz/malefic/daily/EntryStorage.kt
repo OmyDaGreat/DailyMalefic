@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * [EntryStorage] is responsible for storing and retrieving entries from a JSON history file.
@@ -15,15 +16,40 @@ class EntryStorage(
     private val storageDir: String = "/data",
 ) {
     private val historyFile = File("$storageDir/entry_history.json")
+    private val nextId = AtomicLong(0)
     private val mapper =
         jacksonObjectMapper()
             .registerModule(JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
+    private val entryIdComparator = Comparator<Entry> { left, right -> compareIds(left.id, right.id) }
+
+    private val historyComparator = Comparator<Entry> { left, right ->
+        val dateCompare = left.date.compareTo(right.date)
+        if (dateCompare != 0) {
+            dateCompare
+        } else {
+            compareIds(left.id, right.id)
+        }
+    }
+
     init {
         historyFile.parentFile?.mkdirs()
         if (!historyFile.exists()) {
             historyFile.writeText("[]")
+        }
+        nextId.set(loadHistory().mapNotNull { it.id?.toLongOrNull() }.maxOrNull() ?: 0L)
+    }
+
+    private fun compareIds(left: String?, right: String?): Int {
+        val leftNumeric = left?.toLongOrNull()
+        val rightNumeric = right?.toLongOrNull()
+
+        return when {
+            leftNumeric != null && rightNumeric != null -> leftNumeric.compareTo(rightNumeric)
+            leftNumeric != null -> -1
+            rightNumeric != null -> 1
+            else -> (left ?: "").compareTo(right ?: "")
         }
     }
 
@@ -34,20 +60,31 @@ class EntryStorage(
      *
      * @param entry The entry to be saved.
      */
-    fun saveEntry(entry: Entry) {
-        val newEntry = entry.copy(songQuery = null)
-
+    @Synchronized
+    fun saveEntry(entry: Entry): Entry {
         val history = loadHistory().toMutableList()
-        val existingIndex = history.indexOfFirst { it.id == newEntry.id }
+        val normalizedEntry = entry.copy(songQuery = null)
+        val savedEntry =
+            if (normalizedEntry.id.isNullOrBlank()) {
+                normalizedEntry.copy(id = nextId.incrementAndGet().toString())
+            } else {
+                normalizedEntry.id.toLongOrNull()?.let { numericId ->
+                    nextId.updateAndGet { current -> maxOf(current, numericId) }
+                }
+                normalizedEntry
+            }
+
+        val existingIndex = history.indexOfFirst { it.id == savedEntry.id }
 
         if (existingIndex >= 0) {
-            history[existingIndex] = newEntry
+            history[existingIndex] = savedEntry
         } else {
-            history.add(newEntry)
+            history.add(savedEntry)
         }
 
-        history.sortBy { it.date }
+        history.sortWith(historyComparator)
         mapper.writeValue(historyFile, history)
+        return savedEntry
     }
 
     /**
@@ -68,7 +105,7 @@ class EntryStorage(
      * @return A list of entries from the most recent date, sorted by ID for consistency.
      */
     fun loadLatestDateEntries(): List<Entry> =
-        loadHistory().takeIf { it.isNotEmpty() }?.let { h -> h.filter { it.date == h.maxOf(Entry::date) }.sortedBy(Entry::id) }
+        loadHistory().takeIf { it.isNotEmpty() }?.let { h -> h.filter { it.date == h.maxOf(Entry::date) }.sortedWith(entryIdComparator) }
             ?: emptyList()
 
     /**
@@ -85,5 +122,5 @@ class EntryStorage(
      * @param date The date to filter entries by.
      * @return A list of entries from the specified date, sorted by ID for consistency.
      */
-    fun loadEntry(date: LocalDate): List<Entry> = loadHistory().filter { it.date == date }.sortedBy(Entry::id)
+    fun loadEntry(date: LocalDate): List<Entry> = loadHistory().filter { it.date == date }.sortedWith(entryIdComparator)
 }

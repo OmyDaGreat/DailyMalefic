@@ -48,6 +48,7 @@ class DailyMaleficTest {
 
         postResponse shouldHaveStatus OK
         val responseEntry = entryLens(postResponse)
+        responseEntry.id shouldBe "1"
         responseEntry.author shouldBe newEntry.author
         responseEntry.text shouldBe newEntry.text
 
@@ -64,6 +65,7 @@ class DailyMaleficTest {
         val postRequest = Request(POST, "/entry").with(entryLens of newEntry)
         val postResponse = testApp(postRequest)
         val savedEntry = entryLens(postResponse)
+        savedEntry.id shouldBe "1"
 
         // Create new app instance (simulating restart)
         val newStorage = EntryStorage(tempDir.toString())
@@ -90,16 +92,20 @@ class DailyMaleficTest {
         val entry1 = Entry(author = "Author 1", text = "First entry")
         val entry2 = Entry(author = "Author 2", text = "Second entry")
 
-        testApp(Request(POST, "/entry").with(entryLens of entry1))
-        testApp(Request(POST, "/entry").with(entryLens of entry2))
+        val savedEntry1 = entryLens(testApp(Request(POST, "/entry").with(entryLens of entry1)))
+        val savedEntry2 = entryLens(testApp(Request(POST, "/entry").with(entryLens of entry2)))
+        savedEntry1.id shouldBe "1"
+        savedEntry2.id shouldBe "2"
 
         val historyResponse = testApp(Request(GET, "/entry/history"))
         historyResponse shouldHaveStatus OK
 
         val history = entryListLens(historyResponse)
         history.size shouldBe 2 // 2 new entries
+        history[0].id shouldBe savedEntry1.id
         history[0].author shouldBe "Author 1"
         history[0].text shouldBe "First entry"
+        history[1].id shouldBe savedEntry2.id
         history[1].author shouldBe "Author 2"
         history[1].text shouldBe "Second entry"
     }
