@@ -13,29 +13,48 @@ A lightweight HTTP service for managing daily journal entries with history track
 ## Endpoints
 
 ### GET /ping
-Health check endpoint returning "pong"
+**Purpose:** Quick health check.
+
+**Response:** `200 OK` with `pong`.
+
+**Notes:** Good for liveness checks.
 
 ### GET /health
-Health check endpoint returning "healthy" (used by Docker healthcheck)
+**Purpose:** Health check for Docker.
+
+**Response:** `200 OK` with `healthy`.
+
+**Notes:** Handy for readiness/liveness probes.
 
 ### GET /entry
-Retrieve entries using one of three modes:
+**Purpose:** Get journal entries.
 
-- No query parameters: return all entries from the most recent date, sorted by `id`
-- `?id=<entry-id>`: return the single entry with that `id`
-- `?date=YYYY-MM-DD`: return all entries for that date, sorted by `id`
+**Request:** Optional query params:
 
-If both `id` and `date` are provided, `id` takes precedence.
+- `id=<entry-id>` to load a single entry
+- `date=YYYY-MM-DD` to load entries for a specific date
 
-**Responses:**
-- No query parameters or `?date=` return an array of entries
-- `?id=` returns a single entry object
+If both are provided, `id` takes precedence.
+
+**Response:** `200 OK` returns:
+
+- a single entry object for `?id=`
+- an array of entries for no query parameters or `?date=`
 
 **Errors:**
-- `404 Entry not found` when an `id` does not exist or a `date` has no entries
-- `400 Invalid date format, expected YYYY-MM-DD` when `date` is not valid
 
-#### Example: most recent date
+- `400 Bad Request` if `date` is invalid
+- `404 Not Found` if the entry or date isn't found
+
+**Notes:**
+
+- No query parameters return the latest date's entries
+- Results are sorted by `id` for no-query and date lookups
+
+**Examples:**
+
+No query parameters:
+
 ```json
 [
   {
@@ -57,7 +76,8 @@ If both `id` and `date` are provided, `id` takes precedence.
 ]
 ```
 
-#### Example: entry by id
+`?id=<entry-id>`:
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -68,7 +88,8 @@ If both `id` and `date` are provided, `id` takes precedence.
 }
 ```
 
-#### Example: entries by date
+`?date=YYYY-MM-DD`:
+
 ```json
 [
   {
@@ -82,7 +103,14 @@ If both `id` and `date` are provided, `id` takes precedence.
 ```
 
 ### GET /entry/history
-Retrieve all historical entries sorted by date (ascending, so latest date is last)
+**Purpose:** Get all historical entries.
+
+**Response:** `200 OK` with entries sorted by date ascending.
+
+**Notes:** Latest date is last.
+
+**Example:**
+
 ```json
 [
   {
@@ -112,13 +140,17 @@ Retrieve all historical entries sorted by date (ascending, so latest date is las
 ```
 
 ### POST /entry
-Create a new entry or update an existing entry (requires API key authentication)
+**Purpose:** Create or update an entry.
 
-**Headers:**
+**Authentication:** Send `X-API-Key` when `API_KEY` is set.
+
+**Request:**
+
 - `Content-Type: application/json`
-- `X-API-Key: your-api-key` (required if API_KEY env var is set)
+- Optional `X-API-Key: your-api-key`
+- JSON body with `author`, `text`, `date`, optional `songQuery`, and optional `id`
 
-**Request Body (new entry):**
+**Request example: new entry**
 ```json
 {
   "author": "New Author",
@@ -128,7 +160,7 @@ Create a new entry or update an existing entry (requires API key authentication)
 }
 ```
 
-**Request Body (update existing entry by ID):**
+**Request example: update existing entry by ID**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -139,8 +171,19 @@ Create a new entry or update an existing entry (requires API key authentication)
 }
 ```
 
-**Response:**
-Returns the created or updated entry with its unique ID:
+**Response:** `200 OK` with the saved entry.
+
+**Errors:** `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing.
+
+**Notes:**
+
+- If `id` is provided, that entry gets updated or created
+- If `id` is missing, a new one is generated
+- `songQuery` is optional and searches YouTube Music for the first match
+- Multiple entries can share the same date
+
+**Response example:**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -160,33 +203,40 @@ Returns the created or updated entry with its unique ID:
 }
 ```
 
-**Notes:**
-- If you provide an `id` in the request body, the existing entry with that ID will be updated or a new entry with that ID will be created.
-- If you don't provide an `id`, a new unique ID will be generated automatically.
-- The `songQuery` field is optional. When provided, the service will search YouTube Music for the song and automatically populate the `song` field with the first matching result. For better search results, include both the artist and song name.
-- Multiple entries can exist with the same date. Each entry has a unique `id` for future updates.
-
 ### DELETE /entry
-Delete an existing entry by ID (requires API key authentication)
+**Purpose:** Delete an entry by ID.
 
-**Headers:**
+**Authentication:** Send `X-API-Key` when `API_KEY` is set.
+
+**Request:**
+
 - `Content-Type: application/json`
-- `X-API-Key: your-api-key` (required if API_KEY env var is set)
+- Optional `X-API-Key: your-api-key`
+- JSON body containing `id`
 
-**Request Body:**
+**Request example:**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-**Response (success):**
+**Response:**
+
+- `200 OK` with `Entry deleted` when the entry is removed
+- `404 Not Found` with `Entry not found, nothing deleted` when no matching entry exists
+
+**Errors:** `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing.
+
+**Notes:** The entry is matched by `id`.
+
+**Success example:**
 ```
 HTTP 200 OK
 Entry deleted
 ```
 
-**Response (not found):**
+**Not found example:**
 ```
 HTTP 404 Not Found
 Entry not found, nothing deleted
@@ -199,37 +249,16 @@ Entry not found, nothing deleted
 - `API_KEY`: Optional API key for POST authentication. If set, all POST requests must include `X-API-Key` header. Otherwise, POST endpoints are open without authentication.
 - `JAVA_OPTS`: Java runtime options (default: `-Xmx512m`)
 
-## Build
-
-```bash
-./gradlew build
-```
-
-## Run Locally
-
-```bash
-./gradlew run
-```
-
-Server starts on port 7290.
-
 ## Docker
 
-### Build
+Use the included `docker-compose.yml`:
+
 ```bash
-docker build -t dailymalefic .
+export API_KEY=your-secret-key   # optional
+docker compose up --build
 ```
 
-### Run
-```bash
-docker run -p 7290:7290 -v entry_data:/data -e API_KEY=your-secret-key dailymalefic
-```
-
-### Docker Compose
-```bash
-export API_KEY=your-secret-key
-docker-compose up
-```
+That starts the app on port `7290`, mounts `entry_data` to `/data`, and passes `API_KEY` through if you set it.
 
 ## Significant Libraries
 
