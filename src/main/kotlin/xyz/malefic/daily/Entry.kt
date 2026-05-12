@@ -19,7 +19,7 @@ import java.time.LocalDate
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Entry(
-    val id: String? = null,
+    val id: Long? = null,
     val author: String,
     val text: String,
     val date: LocalDate = LocalDate.now(),

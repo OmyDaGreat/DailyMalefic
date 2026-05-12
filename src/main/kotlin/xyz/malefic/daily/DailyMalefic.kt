@@ -16,6 +16,7 @@ import org.http4k.filter.AllowAllOriginPolicy
 import org.http4k.filter.CorsPolicy
 import org.http4k.filter.DebuggingFilters.PrintRequest
 import org.http4k.filter.ServerFilters
+import org.http4k.lens.LensFailure
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Undertow
@@ -45,26 +46,46 @@ fun createApp(
             "/entry" bind GET to { request ->
                 val id = request.query("id")
                 val date = request.query("date")
-                if (!id.isNullOrBlank()) {
-                    val found = storage.loadEntry(id)
-                    if (found != null) {
-                        Response(OK).with(entryLens of found)
-                    } else {
-                        Response(NOT_FOUND).body("Entry not found")
+                val author = request.query("author")
+                when {
+                    !id.isNullOrBlank() -> {
+                        try {
+                            val found = storage.loadEntry(id.toLong())
+                            if (found != null) {
+                                Response(OK).with(entryLens of found)
+                            } else {
+                                Response(NOT_FOUND).body("Entry not found")
+                            }
+                        } catch (_: NumberFormatException) {
+                            Response(BAD_REQUEST).body("Invalid ID format, expected a number")
+                        }
                     }
-                } else if (!date.isNullOrBlank()) {
-                    try {
-                        val found = storage.loadEntry(LocalDate.parse(date))
+
+                    !date.isNullOrBlank() -> {
+                        try {
+                            val found = storage.loadEntry(LocalDate.parse(date))
+                            if (found.isNotEmpty()) {
+                                Response(OK).with(entryListLens of found)
+                            } else {
+                                Response(NOT_FOUND).body("Entry not found")
+                            }
+                        } catch (_: DateTimeParseException) {
+                            Response(BAD_REQUEST).body("Invalid date format, expected YYYY-MM-DD")
+                        }
+                    }
+
+                    !author.isNullOrBlank() -> {
+                        val found = storage.loadEntry(author)
                         if (found.isNotEmpty()) {
                             Response(OK).with(entryListLens of found)
                         } else {
-                            Response(NOT_FOUND).body("Entry not found")
+                            Response(NOT_FOUND).body("No entries found with author $author")
                         }
-                    } catch (_: DateTimeParseException) {
-                        Response(BAD_REQUEST).body("Invalid date format, expected YYYY-MM-DD")
                     }
-                } else {
-                    Response(OK).with(entryListLens of storage.loadLatestDateEntries())
+
+                    else -> {
+                        Response(OK).with(entryListLens of storage.loadLatestDateEntries())
+                    }
                 }
             },
             "/entry/history" bind GET to {
@@ -79,21 +100,25 @@ fun createApp(
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
-                    val requestEntry = entryLens(request)
+                    try {
+                        val requestEntry = entryLens(request)
 
-                    val finalEntry =
-                        if (!requestEntry.songQuery.isNullOrBlank()) {
-                            val foundSong =
-                                runBlocking {
-                                    Music.search(requestEntry.songQuery)
-                                }
-                            requestEntry.copy(song = foundSong?.toEntrySong(), songQuery = null)
-                        } else {
-                            requestEntry.copy(songQuery = null)
-                        }
+                        val finalEntry =
+                            if (!requestEntry.songQuery.isNullOrBlank()) {
+                                val foundSong =
+                                    runBlocking {
+                                        Music.search(requestEntry.songQuery)
+                                    }
+                                requestEntry.copy(song = foundSong?.toEntrySong(), songQuery = null)
+                            } else {
+                                requestEntry.copy(songQuery = null)
+                            }
 
-                    val savedEntry = storage.saveEntry(finalEntry)
-                    Response(OK).with(entryLens of savedEntry)
+                        val savedEntry = storage.saveEntry(finalEntry)
+                        Response(OK).with(entryLens of savedEntry)
+                    } catch (e: LensFailure) {
+                        Response(BAD_REQUEST).body("Invalid entry format: ${e.message}")
+                    }
                 }
             },
             "/entry" bind DELETE to { request ->
@@ -105,11 +130,15 @@ fun createApp(
                     if (id.isNullOrEmpty()) {
                         Response(BAD_REQUEST).body("Missing id")
                     } else {
-                        val removed = storage.deleteEntry(id)
-                        if (removed) {
-                            Response(OK).body("Entry deleted")
-                        } else {
-                            Response(NOT_FOUND).body("Entry not found, nothing deleted")
+                        try {
+                            val removed = storage.deleteEntry(id.toLong())
+                            if (removed) {
+                                Response(OK).body("Entry deleted")
+                            } else {
+                                Response(NOT_FOUND).body("Entry not found, nothing deleted")
+                            }
+                        } catch (_: NumberFormatException) {
+                            Response(BAD_REQUEST).body("Invalid ID format, expected a number")
                         }
                     }
                 }
