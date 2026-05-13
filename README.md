@@ -37,6 +37,15 @@ These both start the app on port `7290`, mount `entry_data` to `/data`, and pass
 
 **Notes:** Good for liveness checks.
 
+### GET /auth-ping
+**Purpose:** Check if API key authentication is working/correct.
+
+**Response:** `200 OK` returns if the provided `X-API-Key` is valid when `API_KEY` is set.
+
+**Errors:** `401 Unauthorized` with `Invalid API key` when the API key is wrong.
+
+**Notes:** Only relevant if `API_KEY` is set. Otherwise, this endpoint is open and always returns `200 OK`.
+
 ### GET /health
 **Purpose:** Health check for Docker.
 

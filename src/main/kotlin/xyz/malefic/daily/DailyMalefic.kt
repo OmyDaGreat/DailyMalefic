@@ -24,6 +24,8 @@ import org.http4k.server.asServer
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
+private const val API_KEY_HEADER = "X-API-Key"
+
 fun createApp(
     storage: EntryStorage,
     apiKey: String? = System.getenv("API_KEY"),
@@ -40,6 +42,22 @@ fun createApp(
             "/ping" bind GET to {
                 Response(OK).body("pong")
             },
+            "/auth-ping" bind GET to { request ->
+                val requestApiKey = request.header(API_KEY_HEADER)
+                when (apiKey) {
+                    null -> {
+                        Response(OK).body("No API key exists")
+                    }
+
+                    requestApiKey -> {
+                        Response(OK).body("Authorization check passed")
+                    }
+
+                    else -> {
+                        Response(UNAUTHORIZED).body("Invalid API key")
+                    }
+                }
+            },
             "/health" bind GET to {
                 Response(OK).body("healthy")
             },
@@ -49,21 +67,22 @@ fun createApp(
                 val author = request.query("author")
                 when {
                     !id.isNullOrBlank() -> {
-                        try {
-                            val found = storage.loadEntry(id.toLong())
+                        val idNum = id.toLongOrNull()
+                        if (idNum == null) {
+                            Response(BAD_REQUEST).body("Invalid ID format, expected a number")
+                        } else {
+                            val found = storage.loadEntryById(idNum)
                             if (found != null) {
                                 Response(OK).with(entryLens of found)
                             } else {
                                 Response(NOT_FOUND).body("Entry not found")
                             }
-                        } catch (_: NumberFormatException) {
-                            Response(BAD_REQUEST).body("Invalid ID format, expected a number")
                         }
                     }
 
                     !date.isNullOrBlank() -> {
                         try {
-                            val found = storage.loadEntry(LocalDate.parse(date))
+                            val found = storage.loadEntriesByDate(LocalDate.parse(date))
                             if (found.isNotEmpty()) {
                                 Response(OK).with(entryListLens of found)
                             } else {
@@ -75,7 +94,7 @@ fun createApp(
                     }
 
                     !author.isNullOrBlank() -> {
-                        val found = storage.loadEntry(author)
+                        val found = storage.loadEntriesByAuthor(author)
                         if (found.isNotEmpty()) {
                             Response(OK).with(entryListLens of found)
                         } else {
@@ -96,7 +115,7 @@ fun createApp(
     val postRoutes =
         routes(
             "/entry" bind POST to { request ->
-                val requestApiKey = request.header("X-API-Key")
+                val requestApiKey = request.header(API_KEY_HEADER)
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
@@ -122,7 +141,7 @@ fun createApp(
                 }
             },
             "/entry" bind DELETE to { request ->
-                val requestApiKey = request.header("X-API-KEY")
+                val requestApiKey = request.header(API_KEY_HEADER)
                 if (apiKey != null && requestApiKey != apiKey) {
                     Response(UNAUTHORIZED).body("Invalid or missing API key")
                 } else {
@@ -130,15 +149,13 @@ fun createApp(
                     if (id.isNullOrEmpty()) {
                         Response(BAD_REQUEST).body("Missing id")
                     } else {
-                        try {
-                            val removed = storage.deleteEntry(id.toLong())
-                            if (removed) {
-                                Response(OK).body("Entry deleted")
-                            } else {
-                                Response(NOT_FOUND).body("Entry not found, nothing deleted")
-                            }
-                        } catch (_: NumberFormatException) {
+                        val idNum = id.toLongOrNull()
+                        if (idNum == null) {
                             Response(BAD_REQUEST).body("Invalid ID format, expected a number")
+                        } else if (storage.deleteEntry(idNum)) {
+                            Response(OK).body("Entry deleted")
+                        } else {
+                            Response(NOT_FOUND).body("Entry not found, nothing deleted")
                         }
                     }
                 }

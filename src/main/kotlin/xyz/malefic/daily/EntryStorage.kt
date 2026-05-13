@@ -16,13 +16,11 @@ class EntryStorage(
     private val storageDir: String = "/data",
 ) {
     private val historyFile = File("$storageDir/entry_history.json")
-    private val nextId = AtomicLong(0)
+    private val maxID = AtomicLong(0)
     private val mapper =
         jacksonObjectMapper()
             .registerModule(JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-
-    private val entryIdComparator = compareBy<Entry> { it.id }
 
     private val historyComparator = compareBy<Entry>({ it.date }, { it.id })
 
@@ -31,7 +29,24 @@ class EntryStorage(
         if (!historyFile.exists()) {
             historyFile.writeText("[]")
         }
-        nextId.set(loadHistory().mapNotNull { it.id }.maxOrNull() ?: 0L)
+
+        val history = loadHistory().toMutableList()
+        val currentMax = history.mapNotNull { if (it.id > 0L) it.id else null }.maxOrNull() ?: 0L
+        maxID.set(currentMax)
+
+        var changed = false
+        for (i in history.indices) {
+            if (history[i].id == 0L) {
+                val newId = maxID.incrementAndGet()
+                history[i] = history[i].copy(id = newId)
+                changed = true
+            }
+        }
+
+        if (changed) {
+            history.sortWith(historyComparator)
+            mapper.writeValue(historyFile, history)
+        }
     }
 
     /**
@@ -46,11 +61,11 @@ class EntryStorage(
         val history = loadHistory().toMutableList()
         val normalizedEntry = entry.copy(songQuery = null)
         val savedEntry =
-            if (normalizedEntry.id == null) {
-                normalizedEntry.copy(id = nextId.incrementAndGet())
+            if (normalizedEntry.id == 0L) {
+                normalizedEntry.copy(id = maxID.incrementAndGet())
             } else {
                 val numericId = normalizedEntry.id
-                nextId.updateAndGet { current -> maxOf(current, numericId) }
+                maxID.updateAndGet { current -> maxOf(current, numericId) }
                 normalizedEntry
             }
 
@@ -84,9 +99,11 @@ class EntryStorage(
      *
      * @return A list of entries from the most recent date, sorted by ID for consistency.
      */
-    fun loadLatestDateEntries(): List<Entry> =
-        loadHistory().takeIf { it.isNotEmpty() }?.let { h -> h.filter { it.date == h.maxOf(Entry::date) }.sortedWith(entryIdComparator) }
-            ?: emptyList()
+    fun loadLatestDateEntries(): List<Entry> {
+        val history = loadHistory()
+        val latestDate = history.maxOfOrNull { it.date } ?: return emptyList()
+        return history.filter { it.date == latestDate }.sortedBy { it.id }
+    }
 
     /**
      * Loads an entry by its ID.
@@ -94,7 +111,7 @@ class EntryStorage(
      * @param id The ID of the entry to load.
      * @return The entry with the specified ID, or null if not found.
      */
-    fun loadEntry(id: Long): Entry? = loadHistory().firstOrNull { it.id == id }
+    fun loadEntryById(id: Long): Entry? = loadHistory().firstOrNull { it.id == id }
 
     /**
      * Loads all entries from a specific date.
@@ -102,7 +119,7 @@ class EntryStorage(
      * @param date The date to filter entries by.
      * @return A list of entries from the specified date, sorted by ID for consistency.
      */
-    fun loadEntry(date: LocalDate): List<Entry> = loadHistory().filter { it.date == date }.sortedWith(entryIdComparator)
+    fun loadEntriesByDate(date: LocalDate): List<Entry> = loadHistory().filter { it.date == date }.sortedBy { it.id }
 
     /**
      * Loads all entries by a specific author.
@@ -110,7 +127,7 @@ class EntryStorage(
      * @param author The author to filter entries by.
      * @return A list of entries by the specified author, sorted by ID for consistency.
      */
-    fun loadEntry(author: String): List<Entry> = loadHistory().filter { it.author == author }.sortedWith(entryIdComparator)
+    fun loadEntriesByAuthor(author: String): List<Entry> = loadHistory().filter { it.author == author }.sortedBy { it.id }
 
     /**
      * Deletes an entry by its ID from the history file.
@@ -119,8 +136,7 @@ class EntryStorage(
      * @return true if an entry was removed, false if no matching entry was found.
      */
     @Synchronized
-    fun deleteEntry(id: Long?): Boolean {
-        if (id == null) return false
+    fun deleteEntry(id: Long): Boolean {
         val history = loadHistory().toMutableList()
         val removed = history.removeIf { it.id == id }
         if (removed) {

@@ -10,7 +10,7 @@ import java.time.LocalDate
 /**
  * Data class representing an entry with an author, text, and date.
  *
- * @property id A server-assigned identifier for the entry.
+ * @property id A server-assigned identifier for the entry. 0 indicates not yet assigned.
  * @property author The author of the entry.
  * @property text The text of the entry.
  * @property date The date of the entry, defaulting to the current date.
@@ -19,7 +19,7 @@ import java.time.LocalDate
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Entry(
-    val id: Long? = null,
+    val id: Long = 0L,
     val author: String,
     val text: String,
     val date: LocalDate = LocalDate.now(),
