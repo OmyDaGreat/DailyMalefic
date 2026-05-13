@@ -7,7 +7,7 @@ import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
 import org.http4k.core.Response
 import org.http4k.core.Status.Companion.BAD_REQUEST
-import org.http4k.core.Status.Companion.NOT_FOUND
+import org.http4k.core.Status.Companion.NO_CONTENT
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.Status.Companion.UNAUTHORIZED
 import org.http4k.core.then
@@ -75,7 +75,7 @@ fun createApp(
                             if (found != null) {
                                 Response(OK).with(entryLens of found)
                             } else {
-                                Response(NOT_FOUND).body("Entry not found")
+                                Response(NO_CONTENT).body("No entry found with id $id")
                             }
                         }
                     }
@@ -86,7 +86,7 @@ fun createApp(
                             if (found.isNotEmpty()) {
                                 Response(OK).with(entryListLens of found)
                             } else {
-                                Response(NOT_FOUND).body("Entry not found")
+                                Response(NO_CONTENT).body("No entries from date $date")
                             }
                         } catch (_: DateTimeParseException) {
                             Response(BAD_REQUEST).body("Invalid date format, expected YYYY-MM-DD")
@@ -98,7 +98,7 @@ fun createApp(
                         if (found.isNotEmpty()) {
                             Response(OK).with(entryListLens of found)
                         } else {
-                            Response(NOT_FOUND).body("No entries found with author $author")
+                            Response(NO_CONTENT).body("No entries found with author $author")
                         }
                     }
 
@@ -155,7 +155,7 @@ fun createApp(
                         } else if (storage.deleteEntry(idNum)) {
                             Response(OK).body("Entry deleted")
                         } else {
-                            Response(NOT_FOUND).body("Entry not found, nothing deleted")
+                            Response(NO_CONTENT).body("Entry not found, nothing deleted")
                         }
                     }
                 }
