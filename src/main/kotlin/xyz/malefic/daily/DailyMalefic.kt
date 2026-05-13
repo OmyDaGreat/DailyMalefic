@@ -151,7 +151,7 @@ fun createApp(
                 } else {
                     val id = request.query("id")
                     if (id.isNullOrEmpty()) {
-                        Response(BAD_REQUEST).body("Missing id")
+                        Response(BAD_REQUEST).body("Missing id from request")
                     } else {
                         val idNum = id.toLongOrNull()
                         if (idNum == null) {

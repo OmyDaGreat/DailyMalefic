@@ -71,7 +71,7 @@ If both are provided, `id` takes precedence.
 **Errors:**
 
 - `400 Bad Request` if `date` is invalid
-- `404 Not Found` if the entry or date isn't found
+- `204 No Content` if the entry or date isn't found
 
 **Notes:**
 
@@ -251,7 +251,7 @@ No query parameters:
 **Response:**
 
 - `200 OK` with `Entry deleted` when the entry is removed
-- `404 Not Found` with `Entry not found, nothing deleted` when no matching entry exists
+- `204 No Content` with `Entry not found, nothing deleted` when no matching entry exists
 
 **Errors:** `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing.
 
@@ -265,7 +265,7 @@ Entry deleted
 
 **Not found example:**
 ```
-HTTP 404 Not Found
+HTTP 204 No Content
 Entry not found, nothing deleted
 ```
 
