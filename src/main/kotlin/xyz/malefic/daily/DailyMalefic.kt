@@ -140,6 +140,10 @@ fun createApp(
                     }
                 }
             },
+        )
+
+    val deleteRoutes =
+        routes(
             "/entry" bind DELETE to { request ->
                 val requestApiKey = request.header(API_KEY_HEADER)
                 if (apiKey != null && requestApiKey != apiKey) {
@@ -168,7 +172,7 @@ fun createApp(
         routes(
             "" bind GET to getRoutes,
             "" bind POST to postRoutes,
-            "" bind DELETE to postRoutes,
+            "" bind DELETE to deleteRoutes,
         ),
     )
 }
