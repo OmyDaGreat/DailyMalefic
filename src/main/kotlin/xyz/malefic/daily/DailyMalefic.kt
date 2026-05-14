@@ -32,7 +32,7 @@ fun createApp(
 ): HttpHandler {
     val corsPolicy =
         CorsPolicy(
-            headers = listOf("Content-Type"),
+            headers = listOf("Content-Type", API_KEY_HEADER),
             methods = listOf(GET, POST, DELETE),
             originPolicy = AllowAllOriginPolicy,
         )
