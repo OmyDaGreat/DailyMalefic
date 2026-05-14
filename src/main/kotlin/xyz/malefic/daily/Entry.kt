@@ -2,6 +2,8 @@ package xyz.malefic.daily
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonSetter
+import com.fasterxml.jackson.annotation.Nulls
 import dev.toastbits.ytmkt.model.external.mediaitem.YtmSong
 import org.http4k.core.Body
 import org.http4k.format.Jackson.auto
@@ -19,6 +21,7 @@ import java.time.LocalDate
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Entry(
+    @param:JsonSetter(nulls = Nulls.SKIP)
     val id: Long = 0L,
     val author: String,
     val text: String,
@@ -81,11 +84,11 @@ fun YtmSong.toEntrySong(): EntrySong =
     )
 
 /**
- * Lens to handle the conversion between HTTP bodies and Entry objects.
+ * Lens to handle the conversion between HTTP bodies and [Entry] objects.
  */
 val entryLens = Body.auto<Entry>().toLens()
 
 /**
- * Lens to handle the conversion between HTTP bodies and lists of Entry objects.
+ * Lens to handle the conversion between HTTP bodies and lists of [Entry] objects.
  */
 val entryListLens = Body.auto<List<Entry>>().toLens()
