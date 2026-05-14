@@ -253,7 +253,10 @@ No query parameters:
 - `200 OK` with `Entry deleted` when the entry is removed
 - `204 No Content` with `Entry not found, nothing deleted` when no matching entry exists
 
-**Errors:** `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing.
+**Errors:** 
+
+- `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing
+- `400 Bad Request` if `id` is missing from the request body or the `id` is invalid
 
 **Notes:** The entry is matched by `id`.
 

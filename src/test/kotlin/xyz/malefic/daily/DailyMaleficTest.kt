@@ -2,11 +2,12 @@ package xyz.malefic.daily
 
 import io.kotest.matchers.shouldBe
 import org.http4k.core.HttpHandler
+import org.http4k.core.Method.DELETE
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.POST
-import org.http4k.core.Method.DELETE
-import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Request
+import org.http4k.core.Status.Companion.BAD_REQUEST
+import org.http4k.core.Status.Companion.NO_CONTENT
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.with
 import org.http4k.kotest.shouldHaveStatus
@@ -50,7 +51,7 @@ class DailyMaleficTest {
 
         postResponse shouldHaveStatus OK
         val responseEntry = entryLens(postResponse)
-        responseEntry.id shouldBe "1"
+        responseEntry.id shouldBe 1L
         responseEntry.author shouldBe newEntry.author
         responseEntry.text shouldBe newEntry.text
 
@@ -58,6 +59,20 @@ class DailyMaleficTest {
 
         getResponse shouldHaveStatus OK
         entryLens(getResponse) shouldBe responseEntry
+    }
+
+    @Test
+    fun `Post entry accepts null id and assigns server id`() {
+        val postRequest =
+            Request(POST, "/entry")
+                .body("""{"id":null,"author":"Author","text":"Entry with null id"}""")
+        val postResponse = testApp(postRequest)
+
+        postResponse shouldHaveStatus OK
+        val responseEntry = entryLens(postResponse)
+        responseEntry.id shouldBe 1L
+        responseEntry.author shouldBe "Author"
+        responseEntry.text shouldBe "Entry with null id"
     }
 
     @Test
@@ -72,8 +87,8 @@ class DailyMaleficTest {
         storage.loadHistory().isEmpty() shouldBe true
 
         val getResponse = testApp(Request(GET, "/entry?id=${savedEntry.id}"))
-        getResponse shouldHaveStatus NOT_FOUND
-        getResponse.bodyString() shouldBe "Entry not found"
+        getResponse shouldHaveStatus NO_CONTENT
+        getResponse.bodyString() shouldBe "No entry found with id ${savedEntry.id}"
     }
 
     @Test
@@ -81,15 +96,15 @@ class DailyMaleficTest {
         val deleteResponse = testApp(Request(DELETE, "/entry"))
 
         deleteResponse.status.code shouldBe 400
-        deleteResponse.bodyString() shouldBe "Missing id"
+        deleteResponse.bodyString() shouldBe "Request missing ID to delete"
     }
 
     @Test
-    fun `Delete entry for unknown id returns not found`() {
+    fun `Delete entry for unknown id returns bad request`() {
         val deleteResponse = testApp(Request(DELETE, "/entry?id=does-not-exist"))
 
-        deleteResponse shouldHaveStatus NOT_FOUND
-        deleteResponse.bodyString() shouldBe "Entry not found, nothing deleted"
+        deleteResponse shouldHaveStatus BAD_REQUEST
+        deleteResponse.bodyString() shouldBe "Invalid ID format, expected a number"
     }
 
     @Test
@@ -99,7 +114,7 @@ class DailyMaleficTest {
         val postRequest = Request(POST, "/entry").with(entryLens of newEntry)
         val postResponse = testApp(postRequest)
         val savedEntry = entryLens(postResponse)
-        savedEntry.id shouldBe "1"
+        savedEntry.id shouldBe 1L
 
         // Create new app instance (simulating restart)
         val newStorage = EntryStorage(tempDir.toString())
@@ -126,8 +141,8 @@ class DailyMaleficTest {
         newStorage.loadHistory().isEmpty() shouldBe true
 
         val getResponse = newApp(Request(GET, "/entry?id=${savedEntry.id}"))
-        getResponse shouldHaveStatus NOT_FOUND
-        getResponse.bodyString() shouldBe "Entry not found"
+        getResponse shouldHaveStatus NO_CONTENT
+        getResponse.bodyString() shouldBe "No entry found with id ${savedEntry.id}"
     }
 
     @Test
@@ -146,8 +161,8 @@ class DailyMaleficTest {
 
         val savedEntry1 = entryLens(testApp(Request(POST, "/entry").with(entryLens of entry1)))
         val savedEntry2 = entryLens(testApp(Request(POST, "/entry").with(entryLens of entry2)))
-        savedEntry1.id shouldBe "1"
-        savedEntry2.id shouldBe "2"
+        savedEntry1.id shouldBe 1L
+        savedEntry2.id shouldBe 2L
 
         val historyResponse = testApp(Request(GET, "/entry/history"))
         historyResponse shouldHaveStatus OK
