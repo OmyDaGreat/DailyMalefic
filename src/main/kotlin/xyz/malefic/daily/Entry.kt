@@ -4,9 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
-import dev.toastbits.ytmkt.model.external.mediaitem.YtmSong
-import org.http4k.core.Body
-import org.http4k.format.Jackson.auto
 import java.time.LocalDate
 
 /**
@@ -58,37 +55,3 @@ data class EntrySongArtist(
     val id: String,
     val name: String? = null,
 )
-
-/**
- * Converts a [YtmSong] to an [EntrySong].
- *
- * This extension function transforms a YouTube Music song object into the minimal
- * EntrySong representation used by this application, extracting the song's id, name,
- * and a list of artists.
- *
- * @return An [EntrySong] containing the song's id, name, and artists information.
- */
-fun YtmSong.toEntrySong(): EntrySong =
-    EntrySong(
-        id = id,
-        name = name,
-        artists =
-            artists
-                .orEmpty()
-                .map { artist ->
-                    EntrySongArtist(
-                        id = artist.id,
-                        name = artist.name,
-                    )
-                },
-    )
-
-/**
- * Lens to handle the conversion between HTTP bodies and [Entry] objects.
- */
-val entryLens = Body.auto<Entry>().toLens()
-
-/**
- * Lens to handle the conversion between HTTP bodies and lists of [Entry] objects.
- */
-val entryListLens = Body.auto<List<Entry>>().toLens()

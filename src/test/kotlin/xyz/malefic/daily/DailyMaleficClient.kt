@@ -13,7 +13,7 @@ fun main() {
 
     val printingClient: HttpHandler = PrintResponse().then(client)
 
-    val response: Response = printingClient(Request(GET, "http://localhost:7290/ping"))
+    val response: Response = printingClient(Request(GET, "http://localhost:7290/api/ping"))
 
     println(response.bodyString())
 }

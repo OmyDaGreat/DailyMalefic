@@ -7,7 +7,7 @@ A lightweight REST API service for managing daily journal entries with history t
 - **Entry Management**: Store and retrieve daily journal entries via REST API
 - **Music Integration**: Automatically search and associate YouTube Music songs with entries
 - **Entry History**: Track all historical entries with dates
-- **API Key Authentication**: Secure POST endpoints with API key authentication
+- **API Key Authentication**: Secure write endpoints (`POST`, `PUT`, `DELETE`) with API key authentication
 - **Persistence**: File-based storage with automatic initialization
 
 ## Docker
@@ -30,57 +30,48 @@ These both start the app on port `7290`, mount `entry_data` to `/data`, and pass
 
 ## Endpoints
 
-### GET /ping
+All endpoints are prefixed with `/api`.
+
+### GET /api/ping
 **Purpose:** Quick health check.
 
-**Response:** `200 OK` with `pong`.
+**Response:**
 
-**Notes:** Good for liveness checks.
+- `200 OK`: Service is reachable. Body is `pong`.
 
-### GET /auth-ping
+### GET /api/auth/validate
 **Purpose:** Check if API key authentication is working/correct.
 
-**Response:** `200 OK` returns if the provided `X-API-Key` is valid when `API_KEY` is set.
+**Response:**
 
-**Errors:** `401 Unauthorized` with `Invalid API key` when the API key is wrong.
+- `200 OK`: API key is valid, or no `API_KEY` is configured on the server.
+- `401 Unauthorized`: Provided `X-API-Key` is invalid.
 
-**Notes:** Only relevant if `API_KEY` is set. Otherwise, this endpoint is open and always returns `200 OK`.
-
-### GET /health
+### GET /api/health
 **Purpose:** Health check for Docker.
 
-**Response:** `200 OK` with `healthy`.
+**Response:**
 
-**Notes:** Handy for readiness/liveness probes.
+- `200 OK`: Service is healthy. Body is `healthy`.
 
-### GET /entry
-**Purpose:** Get journal entries.
+### GET /api/entries
+**Purpose:** List entries.
 
 **Request:** Optional query params:
 
-- `id=<entry-id>` to load a single entry
 - `date=YYYY-MM-DD` to load entries for a specific date
+- `author=<author-name>` to load entries by author
+- `latest=true` to load entries only from the most recent date
+- `latest=false` to explicitly load full history
 
-If both are provided, `id` takes precedence.
+**Response:**
 
-**Response:** `200 OK` returns:
-
-- a single entry object for `?id=`
-- an array of entries for no query parameters or `?date=`
-
-**Errors:**
-
-- `400 Bad Request` if `date` is invalid
-- `204 No Content` if the entry or date isn't found
-
-**Notes:**
-
-- No query parameters return the latest date's entries
-- Results are sorted by `id` for no-query and date lookups
+- `200 OK`: Returns an array of entries. With no query parameters, returns full history. Empty result is `[]`.
+- `400 Bad Request`: `date` is not `YYYY-MM-DD`, or `latest` is not `true`/`false`.
 
 **Examples:**
 
-No query parameters:
+No query parameters (`GET /api/entries`):
 
 ```json
 [
@@ -101,18 +92,6 @@ No query parameters:
     }
   }
 ]
-```
-
-`?id=<entry-id>`:
-
-```json
-{
-  "id": "1",
-  "author": "Author Name",
-  "text": "Entry text",
-  "date": "2026-05-11",
-  "song": null
-}
 ```
 
 `?date=YYYY-MM-DD`:
@@ -129,45 +108,38 @@ No query parameters:
 ]
 ```
 
-### GET /entry/history
-**Purpose:** Get all historical entries.
+### GET /api/entries/{id}
+**Purpose:** Get a single entry by ID.
 
-**Response:** `200 OK` with entries sorted by date ascending.
+**Response:**
 
-**Notes:** Latest date is last.
+- `200 OK`: Returns the requested entry object.
+- `400 Bad Request`: `id` is not numeric.
+- `404 Not Found`: No entry exists with that ID.
 
 **Example:**
 
 ```json
-[
-  {
-    "id": "1",
-    "author": "Author Name",
-    "text": "Entry text",
-    "date": "2026-05-09",
-    "song": {
-      "id": "song-id",
-      "name": "Song Name",
-      "artists": [
-        {
-          "id": "artist-id",
-          "name": "Artist Name"
-        }
-      ]
-    }
-  },
-  {
-    "id": "2",
-    "author": "Author Name",
-    "text": "Entry text",
-    "date": "2026-05-11",
-    "song": null
+{
+  "id": "1",
+  "author": "Author Name",
+  "text": "Entry text",
+  "date": "2026-05-11",
+  "song": {
+    "id": "song-id",
+    "name": "Song Name",
+    "artists": [
+      {
+        "id": "artist-id",
+        "name": "Artist Name"
+      }
+    ]
   }
-]
+}
 ```
 
-### POST /entry
-**Purpose:** Create or update an entry.
+### POST /api/entries
+**Purpose:** Create a new entry.
 
 **Authentication:** Send `X-API-Key` when `API_KEY` is set.
 
@@ -175,7 +147,7 @@ No query parameters:
 
 - `Content-Type: application/json`
 - Optional `X-API-Key: your-api-key`
-- JSON body with `author`, `text`, `date`, optional `songQuery`, and optional `id`
+- JSON body with `author`, `text`, `date`, optional `songQuery`
 
 **Request example: new entry**
 ```json
@@ -187,27 +159,11 @@ No query parameters:
 }
 ```
 
-**Request example: update existing entry by ID**
-```json
-{
-  "id": "1",
-  "author": "Updated Author",
-  "text": "Updated entry text",
-  "date": "2026-05-11",
-  "songQuery": "different song (optional)"
-}
-```
+**Response:**
 
-**Response:** `200 OK` with the saved entry.
-
-**Errors:** `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing.
-
-**Notes:**
-
-- If `id` is provided, that entry gets updated or created
-- If `id` is missing, a new one is generated
-- `songQuery` is optional and searches YouTube Music for the first match
-- Multiple entries can share the same date
+- `201 Created`: Entry created successfully. Returns the saved entry and `Location: /api/entries/{id}`.
+- `400 Bad Request`: Payload is invalid, or `id` was provided in create request.
+- `401 Unauthorized`: Missing/invalid `X-API-Key` while `API_KEY` is configured.
 
 **Response example:**
 
@@ -230,8 +186,8 @@ No query parameters:
 }
 ```
 
-### DELETE /entry
-**Purpose:** Delete an entry by ID.
+### PUT /api/entries/{id}
+**Purpose:** Update an existing entry by ID.
 
 **Authentication:** Send `X-API-Key` when `API_KEY` is set.
 
@@ -239,44 +195,42 @@ No query parameters:
 
 - `Content-Type: application/json`
 - Optional `X-API-Key: your-api-key`
-- JSON body containing `id`
+- JSON body containing updated `author`, `text`, `date`, and optional `songQuery`
 
 **Request example:**
 ```json
 {
-  "id": "1"
+  "author": "Updated Author",
+  "text": "Updated entry text",
+  "date": "2026-05-11",
+  "songQuery": "different song (optional)"
 }
 ```
 
 **Response:**
 
-- `200 OK` with `Entry deleted` when the entry is removed
-- `204 No Content` with `Entry not found, nothing deleted` when no matching entry exists
+- `200 OK`: Entry updated successfully and returned in response body.
+- `400 Bad Request`: Invalid payload, invalid ID format, or mismatched body/path IDs.
+- `401 Unauthorized`: Missing/invalid `X-API-Key` while `API_KEY` is configured.
+- `404 Not Found`: Target entry does not exist.
 
-**Errors:** 
+### DELETE /api/entries/{id}
+**Purpose:** Delete an entry by ID.
 
-- `401 Unauthorized` with `Invalid or missing API key` when the key is wrong or missing
-- `400 Bad Request` if `id` is missing from the request body or the `id` is invalid
+**Authentication:** Send `X-API-Key` when `API_KEY` is set.
 
-**Notes:** The entry is matched by `id`.
+**Response:**
 
-**Success example:**
-```
-HTTP 200 OK
-Entry deleted
-```
-
-**Not found example:**
-```
-HTTP 204 No Content
-Entry not found, nothing deleted
-```
+- `204 No Content`: Entry deleted successfully.
+- `400 Bad Request`: `id` is invalid.
+- `401 Unauthorized`: Missing/invalid `X-API-Key` while `API_KEY` is configured.
+- `404 Not Found`: No matching entry exists.
 
 ## Configuration
 
 ### Environment Variables
 
-- `API_KEY`: Optional API key for POST authentication. If set, all POST requests must include `X-API-Key` header. Otherwise, POST endpoints are open without authentication.
+- `API_KEY`: Optional API key for write operations (`POST`, `PUT`, `DELETE`). If set, requests must include `X-API-Key`. Otherwise, write endpoints are open without authentication.
 - `JAVA_OPTS`: Java runtime options (default: `-Xmx512m`)
 
 ## Significant Libraries

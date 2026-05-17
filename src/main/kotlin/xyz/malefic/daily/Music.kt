@@ -50,6 +50,27 @@ object Music {
     }
 }
 
-suspend fun main() {
-    println(Music.search("re6ce im not asking"))
-}
+/**
+ * Converts a YouTube Music song to an entry song model.
+ *
+ * This extension function transforms a [YtmSong] from the YouTube Music API
+ * into an [EntrySong] used by the application's data model. It preserves the
+ * song's ID and name, and converts the artist list to [EntrySongArtist] objects.
+ *
+ * @return An [EntrySong] containing the song's ID, name, and converted artist list.
+ *         If the source song has no artists, an empty list is used.
+ */
+fun YtmSong.toEntrySong(): EntrySong =
+    EntrySong(
+        id = id,
+        name = name,
+        artists =
+            artists
+                .orEmpty()
+                .map { artist ->
+                    EntrySongArtist(
+                        id = artist.id,
+                        name = artist.name,
+                    )
+                },
+    )
