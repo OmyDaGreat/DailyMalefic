@@ -2,7 +2,7 @@
 kotlin = "2.3.21"
 http4k = "6.47.0.0"
 jackson = "2.21.3"
-junit = "6.0.3"
+junit = "6.1.0"
 ytm = "0.4.3"
 coroutines = "1.11.0"
 
