@@ -3,8 +3,6 @@ name: Docker Build and Push
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -17,14 +15,14 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: '23'
+          java-version: '25'
           distribution: 'temurin'
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew build
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -47,6 +45,5 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/dailymalefic:${{ github.sha }}
             ${{ secrets.DOCKER_USERNAME }}/dailymalefic:latest
-          # Enable BuildKit cache
           cache-from: type=gha
           cache-to: type=gha,mode=max
