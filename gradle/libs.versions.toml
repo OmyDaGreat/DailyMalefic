@@ -8,14 +8,12 @@ coroutines = "1.11.0"
 
 [libraries]
 http4k-bom = { module = "org.http4k:http4k-bom", version.ref = "http4k" }
-http4k-client-okhttp = { module = "org.http4k:http4k-client-okhttp" }
+http4k-client = { module = "org.http4k:http4k-client-okhttp" }
 http4k-config = { module = "org.http4k:http4k-config" }
 http4k-core = { module = "org.http4k:http4k-core" }
-http4k-format-jackson = { module = "org.http4k:http4k-format-jackson" }
-http4k-server-undertow = { module = "org.http4k:http4k-server-undertow" }
-http4k-testing-approval = { module = "org.http4k:http4k-testing-approval" }
-http4k-testing-hamkrest = { module = "org.http4k:http4k-testing-hamkrest" }
-http4k-testing-kotest = { module = "org.http4k:http4k-testing-kotest" }
+http4k-format = { module = "org.http4k:http4k-format-jackson" }
+http4k-server = { module = "org.http4k:http4k-server-undertow" }
+http4k-testing = { module = "org.http4k:http4k-testing-kotest" }
 
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 
@@ -32,14 +30,8 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 
 [bundles]
 http4k = [
-    "http4k-client-okhttp",
     "http4k-config",
     "http4k-core",
-    "http4k-format-jackson",
-    "http4k-server-undertow",
-]
-http4k-testing = [
-    "http4k-testing-approval",
-    "http4k-testing-hamkrest",
-    "http4k-testing-kotest",
+    "http4k-format",
+    "http4k-server",
 ]

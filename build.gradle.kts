@@ -56,7 +56,8 @@ dependencies {
         exclude(group = "com.github.teamnewpipe.NewPipeExtractor", module = "NewPipeExtractor")
     }
 
-    testImplementation(libs.bundles.http4k.testing)
+    testImplementation(libs.http4k.testing)
+    testImplementation(libs.http4k.client)
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)

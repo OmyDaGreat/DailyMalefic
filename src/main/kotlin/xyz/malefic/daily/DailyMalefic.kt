@@ -48,7 +48,6 @@ val app: HttpHandler by lazy { createApp(EntryStorage()) }
 
 fun main() {
     val printingApp: HttpHandler = PrintRequest().then(app)
-
     val server = printingApp.asServer(Undertow(7290)).start()
 
     println("Server started on port ${server.port()}!")
